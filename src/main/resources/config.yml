@@ -1,0 +1,3 @@
+# Max distance (blocks) from an input chest to its receiver / overflow chests.
+# Receiver chests must be in loaded chunks to be found.
+radius: 128

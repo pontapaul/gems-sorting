@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Sorting System Guide</title>
+<style>
+  @page { size: A4; margin: 16mm 16mm 14mm; }
+  :root {
+    --ink: #1f2328; --muted: #5b6470; --line: #d9dde3; --soft: #f4f6f8;
+    --wood: #9a6a3a; --wood-dark: #6b4524; --accent: #2f7d5b;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 10.5pt/1.45 "Segoe UI", Arial, sans-serif; color: var(--ink); background: #fff; }
+  h1 { font-size: 22pt; margin: 0 0 2pt; letter-spacing: -0.3pt; }
+  .sub { color: var(--muted); margin: 0 0 14pt; font-size: 11pt; }
+  h2 { font-size: 13pt; margin: 16pt 0 7pt; padding-bottom: 3pt; border-bottom: 1.5pt solid var(--ink); }
+  p { margin: 0 0 6pt; }
+  code, .tag { font-family: Consolas, "Courier New", monospace; background: var(--soft); border: 0.75pt solid var(--line); border-radius: 3pt; padding: 0 3pt; font-size: 9.5pt; white-space: nowrap; }
+
+  .roles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8pt; }
+  .role { border: 0.75pt solid var(--line); border-radius: 6pt; padding: 9pt; break-inside: avoid; }
+  .role svg { display: block; margin: 0 auto 6pt; }
+  .role h3 { margin: 0 0 3pt; font-size: 11pt; text-align: center; }
+  .role .what { text-align: center; color: var(--muted); font-size: 9pt; margin-bottom: 5pt; }
+  .role p { font-size: 9.5pt; margin: 0; }
+
+  ol.steps { margin: 0; padding: 0; list-style: none; counter-reset: s; }
+  ol.steps li { counter-increment: s; position: relative; padding: 0 0 7pt 26pt; }
+  ol.steps li::before { content: counter(s); position: absolute; left: 0; top: 0; width: 18pt; height: 18pt; border-radius: 50%; background: var(--ink); color: #fff; font-weight: 700; font-size: 9.5pt; display: flex; align-items: center; justify-content: center; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 9.5pt; }
+  th, td { text-align: left; padding: 4pt 6pt; border-bottom: 0.75pt solid var(--line); vertical-align: top; }
+  th { background: var(--soft); font-weight: 600; }
+
+  .flow { display: flex; align-items: stretch; gap: 0; margin: 4pt 0 6pt; }
+  .flow .box { flex: 1; border: 0.75pt solid var(--line); border-radius: 5pt; padding: 6pt 7pt; font-size: 9pt; background: #fff; }
+  .flow .box b { display: block; font-size: 9.5pt; margin-bottom: 1pt; }
+  .flow .arrow { width: 16pt; display: flex; align-items: center; justify-content: center; color: var(--muted); font-size: 12pt; }
+
+  .note { border-left: 3pt solid var(--accent); background: #eef6f2; padding: 6pt 9pt; border-radius: 0 5pt 5pt 0; margin: 8pt 0; font-size: 9.5pt; }
+  ul.tips { margin: 0; padding-left: 14pt; }
+  ul.tips li { margin-bottom: 4pt; }
+  .page2 { break-before: page; }
+  .foot { margin-top: 14pt; color: var(--muted); font-size: 8.5pt; text-align: center; }
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <g id="chest">
+      <rect x="4" y="30" width="72" height="46" rx="3" fill="#b07a43" stroke="#6b4524" stroke-width="2.5"/>
+      <rect x="4" y="30" width="72" height="16" rx="3" fill="#c58b50" stroke="#6b4524" stroke-width="2.5"/>
+      <rect x="34" y="40" width="12" height="13" rx="1.5" fill="#d9d9d9" stroke="#555" stroke-width="1.5"/>
+    </g>
+    <g id="frame">
+      <rect x="84" y="28" width="46" height="46" rx="2" fill="#e9dcc7" stroke="#8a5a2e" stroke-width="4"/>
+    </g>
+  </defs>
+</svg>
+
+<h1>Sorting System</h1>
+<p class="sub">How to build automatic storage with item frames on chests.</p>
+
+<h2>The three chest types</h2>
+<p>Place an <b>item frame on a chest</b> and put one of these items in the frame. The item decides what the chest does.</p>
+
+<div class="roles">
+  <div class="role">
+    <svg width="140" height="82" viewBox="0 0 140 82" aria-label="Chest with Eye of Ender in a frame">
+      <use href="#chest"/><use href="#frame"/>
+      <circle cx="107" cy="51" r="13" fill="#3aa57a" stroke="#1d5e44" stroke-width="2"/>
+      <ellipse cx="107" cy="51" rx="4" ry="8" fill="#10261c"/>
+    </svg>
+    <h3>Input chest</h3>
+    <div class="what">Frame holds an <b>Eye of Ender</b></div>
+    <p>Anything you put in here is sorted <b>instantly</b>. It works with items dropped in by hand, hoppers and droppers.</p>
+  </div>
+  <div class="role">
+    <svg width="140" height="82" viewBox="0 0 140 82" aria-label="Chest with a name tag in a frame">
+      <use href="#chest"/><use href="#frame"/>
+      <path d="M94 44 L113 44 L121 51 L113 58 L94 58 Z" fill="#e8d9a8" stroke="#7a6a3a" stroke-width="2"/>
+      <circle cx="113" cy="51" r="2.2" fill="#7a6a3a"/>
+      <path d="M92 47 Q86 40 90 34" fill="none" stroke="#555" stroke-width="1.5"/>
+    </svg>
+    <h3>Receiver chest</h3>
+    <div class="what">Frame holds a <b>Name Tag</b> named <span class="tag">#code</span></div>
+    <p>Collects every item with <i>code</i> in its name. For example <span class="tag">#Sapling</span> collects all saplings.</p>
+  </div>
+  <div class="role">
+    <svg width="140" height="82" viewBox="0 0 140 82" aria-label="Chest with a Carrot on a Stick in a frame">
+      <use href="#chest"/><use href="#frame"/>
+      <line x1="92" y1="68" x2="120" y2="36" stroke="#8a5a2e" stroke-width="3.5" stroke-linecap="round"/>
+      <path d="M120 36 Q126 48 116 60" fill="none" stroke="#666" stroke-width="1.2"/>
+      <path d="M113 58 L121 57 L114 68 Z" fill="#f08a24" stroke="#a4540f" stroke-width="1.2"/>
+      <path d="M117 57 L116 53 M119 57 L121 54" stroke="#3a8a2a" stroke-width="1.6"/>
+    </svg>
+    <h3>Overflow chest</h3>
+    <div class="what">Frame holds a <b>Carrot on a Stick</b></div>
+    <p>Gets the leftovers: items with no matching name tag, and items whose tagged chests are full.</p>
+  </div>
+</div>
+
+<h2>Setting it up</h2>
+<ol class="steps">
+  <li><b>Place the input chest.</b> Put an item frame on one of its sides (sneak and right-click the chest) and put an <b>Eye of Ender</b> in the frame.</li>
+  <li><b>Name a Name Tag in an anvil</b> so it starts with <span class="tag">#</span>, for example <span class="tag">#Sapling</span>, <span class="tag">#Log</span> or <span class="tag">#Diamond</span>.</li>
+  <li><b>Place the receiver chests</b> within <b>128 blocks</b> of the input chest. Put a frame on each one with its named tag inside.</li>
+  <li><b>Place at least one overflow chest</b> with a <b>Carrot on a Stick</b> in its frame, so unmatched items have somewhere to go.</li>
+  <li><b>Drop items into the input chest.</b> They are sent out right away.</li>
+</ol>
+
+<div class="note"><b>Without an overflow chest</b>, items that don't match any tag stay in the input chest. Nothing is lost or deleted.</div>
+
+<div class="page2"></div>
+
+<h2>Naming the tags</h2>
+<p>The text after <span class="tag">#</span> is looked up inside the item's name. Upper and lower case don't matter.</p>
+<table>
+  <tr><th style="width:22%">Tag</th><th>Collects</th></tr>
+  <tr><td><span class="tag">#Sapling</span></td><td>Oak Sapling, Birch Sapling, Cherry Sapling, … (every sapling)</td></tr>
+  <tr><td><span class="tag">#Oak Sapling</span></td><td>Only Oak Sapling (Dark Oak Sapling too, since its name contains "Oak Sapling")</td></tr>
+  <tr><td><span class="tag">#Log</span></td><td>Every log, including stripped logs</td></tr>
+  <tr><td><span class="tag">#Diamond</span></td><td>Diamond, Diamond Block, Diamond Ore, Diamond Sword, Diamond Pickaxe, …</td></tr>
+  <tr><td><span class="tag">#Seeds</span></td><td>Wheat Seeds, Pumpkin Seeds, Melon Seeds, Beetroot Seeds, …</td></tr>
+</table>
+
+<div class="note">
+  <b>Use the English item names.</b> If your game is set to another language, use the English name or the item ID instead.
+  Press <b>F3 + H</b> to show item IDs when you hover over items. For example, <span class="tag">#oak_sapling</span> works the same as <span class="tag">#Oak Sapling</span>.
+  Items renamed in an anvil are sorted by their <b>original</b> name.
+</div>
+
+<h2>Where each item goes</h2>
+<div class="flow">
+  <div class="box"><b>1. Best match</b>The chest whose tag matches best: the longest matching tag, then the closest chest.</div>
+  <div class="arrow">&#8594;</div>
+  <div class="box"><b>2. Other matches</b>If that chest is full, the next matching chest.</div>
+  <div class="arrow">&#8594;</div>
+  <div class="box"><b>3. Overflow</b>Chests with a Carrot on a Stick, nearest first.</div>
+  <div class="arrow">&#8594;</div>
+  <div class="box"><b>4. Stays put</b>If everything is full, the item stays in the input chest.</div>
+</div>
+<p><b>Example:</b> you have a <span class="tag">#Oak</span> chest and a <span class="tag">#Sapling</span> chest. An Oak Sapling matches both, and it goes to <span class="tag">#Sapling</span> because that tag is longer. Oak Logs and Oak Planks go to <span class="tag">#Oak</span>.</p>
+
+<h2>Good to know</h2>
+<ul class="tips">
+  <li><b>Range:</b> receiver and overflow chests must be within <b>128 blocks</b> of the input chest.</li>
+  <li><b>Stay nearby:</b> far-away chests in areas that aren't loaded are skipped. Their items go to the overflow chest instead.</li>
+  <li><b>Double chests</b> work. The frame can go on either half.</li>
+  <li>Trapped chests and glow item frames work too. The frame can go on any side of the chest, including the top.</li>
+  <li>You can have <b>several input chests</b>, and several chests with the same tag. When one fills up, the next one takes over.</li>
+  <li>Changes to frames take up to <b>3 seconds</b> to take effect.</li>
+  <li>Don't put an Eye of Ender on a receiver chest: that turns it into an input chest, and nothing gets sorted into it.</li>
+  <li><b>Nothing sorts?</b> Check that the name tag starts with <span class="tag">#</span> and was renamed in an anvil, that the frame is on the chest itself, and that the chest is within 128 blocks.</li>
+</ul>
+
+<p class="foot">WsSorting plugin</p>
+</body>
+</html>

@@ -1,0 +1,5 @@
+name: WsSorting
+version: ${project.version}
+main: com.github.wssorting.WsSortingPlugin
+api-version: "1.20"
+description: Sorts items from input chests (Eye of Ender frame) into receiver chests (#name tag frame)
