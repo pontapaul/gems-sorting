@@ -101,8 +101,11 @@ Groups are edited in the web interface, **for server operators only**:
 
 In the editor:
 
-- **Search** items in Italian or in English (accents and the item id work too: `polvere`, `redstone dust`,
-  `redstone`). The filters show all items, only those without a group, or only those in a group.
+- **Item names** are shown in English by default; the *Nomi* selector at the top switches them to Italian
+  (the choice is kept in a cookie for a year).
+- **Search** works in both languages whatever the names are shown in (accents and the item id work too:
+  `polvere`, `redstone dust`, `redstone`). The filters show all items, only those without a group, or only
+  those in a group.
 - **Drag and drop** items from the list into a group, from one group to another (the item moves), or back to
   the list (the item leaves its group). Items can also be reordered inside a group.
 - **Click to add**: pick a group in *Clic aggiunge a* (or press *Seleziona* on a group), then click items to

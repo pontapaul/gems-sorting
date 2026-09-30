@@ -13,6 +13,7 @@ const S = {
   undo: [],
   confirmDelete: null,
   drafts: new Map(),  // group id -> { text, error } for a name being fixed
+  lang: readLang(),   // language of the item names: "en" (default) or "it"
 };
 
 const $ = (id) => document.getElementById(id);
@@ -22,6 +23,32 @@ let sortables = [];
 let catalogList = [];
 let catalogShown = 0;
 const pointer = { x: 0, y: 0 }; // last pointer position while dragging (dragend has no reliable one)
+
+// ---------- Item name language (kept in a cookie) ----------
+
+function readLang() {
+  const match = document.cookie.match(/(?:^|;\s*)gems_lang=(en|it)\b/);
+  return match ? match[1] : "en";
+}
+
+function setLang(lang) {
+  S.lang = lang;
+  const secure = location.protocol === "https:" ? "; Secure" : "";
+  document.cookie = `gems_lang=${lang}; Path=/; Max-Age=31536000; SameSite=Lax${secure}`;
+  sortItems();
+  catalogList = []; // force a full rebuild of the catalog
+  render();
+}
+
+/** The name of an item in the chosen language. */
+function nameOf(item) {
+  return S.lang === "it" ? item.it : item.en;
+}
+
+function sortItems() {
+  const collator = new Intl.Collator(S.lang, { sensitivity: "base", numeric: true });
+  S.items.sort((a, b) => collator.compare(nameOf(a), nameOf(b)));
+}
 
 // ---------- API ----------
 
@@ -89,6 +116,7 @@ async function loadItems() {
     search: normalize(`${item.it} ${item.en} ${item.id}`),
   }));
   S.byId = new Map(S.items.map((item) => [item.id, item]));
+  sortItems();
   if (!S.ready) setTimeout(() => loadItems().then(render).catch(() => {}), 5000);
 }
 
@@ -137,7 +165,7 @@ function newId() {
 
 function itemName(id) {
   const item = S.byId.get(id);
-  return item ? item.it : id;
+  return item ? nameOf(item) : id;
 }
 
 /** The icon of an item: a cell of the atlas (one image for all items), or its initial. */
@@ -152,7 +180,7 @@ function iconElement(item) {
     return div;
   }
   div.className = "noicon";
-  div.textContent = (item ? item.it : "?").charAt(0).toUpperCase();
+  div.textContent = (item ? nameOf(item) : "?").charAt(0).toUpperCase();
   return div;
 }
 
@@ -354,7 +382,9 @@ function renderCatalog(keepScroll = true) {
   if (words.length) {
     // Names that start with the search first.
     const q = normalize(S.query.trim());
-    const rank = (item) => (normalize(item.it).startsWith(q) || normalize(item.en).startsWith(q) ? 0 : 1);
+    // Names starting with the search first: the shown language, then the other one.
+    const other = (item) => (S.lang === "it" ? item.en : item.it);
+    const rank = (item) => (normalize(nameOf(item)).startsWith(q) ? 0 : normalize(other(item)).startsWith(q) ? 1 : 2);
     list = list.map((item) => [rank(item), item]).sort((a, b) => a[0] - b[0]).map((pair) => pair[1]);
   }
 
@@ -394,20 +424,14 @@ function appendTiles(owners = ownerMap(), active = S.groups.find((g) => g.id ===
     li.className = "tile";
     li.dataset.id = item.id;
     li.tabIndex = 0;
-    li.title = `${item.it}\n${item.en} (${item.id})`;
+    li.title = `${nameOf(item)} (${item.id})`;
     li.append(iconElement(item));
     const names = document.createElement("span");
     names.className = "names";
-    const it = document.createElement("span");
-    it.className = "it";
-    it.textContent = item.it;
-    names.append(it);
-    if (item.en !== item.it) {
-      const en = document.createElement("span");
-      en.className = "en";
-      en.textContent = item.en;
-      names.append(en);
-    }
+    const label = document.createElement("span");
+    label.className = "name";
+    label.textContent = nameOf(item);
+    names.append(label);
     li.append(names);
     decorateTile(li, owners.get(item.id), active);
     fragment.append(li);
@@ -542,7 +566,7 @@ function renderGroups() {
       chip.className = "chip";
       if (words.length && item && matches(item, words)) chip.classList.add("match");
       chip.dataset.id = id;
-      chip.title = item ? `${item.it}\n${item.en}` : id;
+      chip.title = item ? `${nameOf(item)} (${id})` : id;
       chip.append(iconElement(item));
       const label = document.createElement("span");
       label.className = "label";
@@ -673,6 +697,8 @@ function bindUi() {
       toggleItem(tile.dataset.id);
     }
   });
+  $("lang").value = S.lang;
+  $("lang").addEventListener("change", (e) => setLang(e.target.value));
   $("target").addEventListener("change", (e) => {
     S.active = e.target.value || null;
     render();

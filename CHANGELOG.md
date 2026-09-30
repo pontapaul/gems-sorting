@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.1.2 - 2026-09-30
+- Web editor: item names are shown in one language only, English by default; a selector switches to Italian and the choice is kept in a cookie. Search still matches both languages.
+
 ## 1.1.1 - 2026-09-30
 - Fix: when upgrading from a config.yml without the `web` section, the first start ignored the defaults (login links pointed to `http://0.0.0.0:8101`).
 

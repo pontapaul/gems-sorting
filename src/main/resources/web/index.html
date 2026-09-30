@@ -34,6 +34,13 @@
       </div>
     </div>
     <div class="topbar-right">
+      <label class="lang" title="Lingua dei nomi degli oggetti (la ricerca funziona in entrambe)">
+        <span>Nomi</span>
+        <select id="lang" aria-label="Lingua dei nomi degli oggetti">
+          <option value="en">English</option>
+          <option value="it">Italiano</option>
+        </select>
+      </label>
       <span id="save-status" class="save-status" data-state="saved" role="status" aria-live="polite">Tutto salvato</span>
       <button id="undo" class="btn ghost" type="button" disabled title="Annulla l'ultima modifica (Ctrl+Z)">↶ Annulla</button>
       <span id="me" class="me"></span>
@@ -59,7 +66,7 @@
       </div>
       <div class="search">
         <input id="search" type="search" autocomplete="off" spellcheck="false"
-               placeholder="Cerca in italiano o in inglese…" aria-label="Cerca un oggetto">
+               placeholder="Cerca un oggetto (inglese o italiano)…" aria-label="Cerca un oggetto">
       </div>
       <div class="filters" role="radiogroup" aria-label="Mostra">
         <button type="button" class="chip-btn" data-filter="all" aria-pressed="true">Tutti</button>

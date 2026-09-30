@@ -108,6 +108,11 @@ button:focus-visible, input:focus-visible, .tile:focus-visible, summary:focus-vi
 .brand .muted { font-size: 12px; }
 .topbar-right { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .me { color: var(--muted); font-size: 13px; }
+.lang { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); }
+.lang select {
+  font: inherit; color: var(--ink); padding: 4px 6px; border-radius: 8px;
+  border: 1px solid var(--line); background: var(--surface);
+}
 .save-status { font-size: 13px; color: var(--muted); padding-right: 4px; }
 .save-status::before { content: "●"; margin-right: 5px; color: var(--accent); }
 .save-status[data-state="saving"]::before { color: #d9a400; }
@@ -182,14 +187,13 @@ button:focus-visible, input:focus-visible, .tile:focus-visible, summary:focus-vi
   cursor: grab; user-select: none; background: var(--surface);
   position: relative;
   content-visibility: auto;
-  contain-intrinsic-size: auto 44px;
+  contain-intrinsic-size: auto 42px;
 }
 .tile:hover { background: var(--surface-2); border-color: var(--line); }
 .tile.in-active { background: var(--accent-soft); border-color: var(--accent); }
 .tile .icon, .tile .noicon { width: 32px; height: 32px; flex: none; }
 .names { display: flex; flex-direction: column; min-width: 0; line-height: 1.25; }
-.names .it { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.names .en { font-size: 12px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.names .name { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .badge {
   margin-left: auto; flex: none; max-width: 90px;
   font-size: 11px; font-weight: 600; padding: 1px 7px; border-radius: 999px;
@@ -268,7 +272,7 @@ button:focus-visible, input:focus-visible, .tile:focus-visible, summary:focus-vi
 .sortable-chosen { cursor: grabbing; }
 .chips.drop-target, .catalog.drop-target { outline: 2px dashed var(--accent); outline-offset: -4px; }
 .chips .tile { padding: 2px 6px; }
-.chips .tile .names .en, .chips .tile .badge { display: none; }
+.chips .tile .badge { display: none; }
 .chips .tile .icon { width: 32px; height: 32px; }
 .tiles .chip { width: 100%; }
 
