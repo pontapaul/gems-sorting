@@ -9,15 +9,20 @@ import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
-/** Name matching between "#code" name tags and item types. */
+/** Name matching between "#code" / ".group" name tags and item types. */
 final class ItemNames {
 
     private final Map<Material, String[]> names = new EnumMap<>(Material.class);
 
+    /** A receiver name tag: "#code" matches item names, ".group" matches a group from the web editor. */
+    record Tag(Kind kind, String code) {}
+
+    enum Kind { NAME, GROUP }
+
     /**
-     * The code of a "#code" name tag, normalized, or null if the item is not a valid tag.
+     * The "#code" or ".group" of a name tag, normalized, or null if the item is not a valid tag.
      */
-    static String tagCode(ItemStack tag) {
+    static Tag tag(ItemStack tag) {
         ItemMeta meta = tag.getItemMeta();
         if (meta == null || !meta.hasDisplayName()) {
             return null;
@@ -27,11 +32,16 @@ final class ItemNames {
             return null;
         }
         String text = PlainTextComponentSerializer.plainText().serialize(name).trim();
-        if (!text.startsWith("#")) {
+        Kind kind;
+        if (text.startsWith("#")) {
+            kind = Kind.NAME;
+        } else if (text.startsWith(".")) {
+            kind = Kind.GROUP;
+        } else {
             return null;
         }
         String code = normalize(text.substring(1));
-        return code.isEmpty() ? null : code;
+        return code.isEmpty() ? null : new Tag(kind, code);
     }
 
     /** True if the code appears in the item's English name or its id (e.g. "oak sapling"). */
@@ -57,6 +67,26 @@ final class ItemNames {
             // fall back to the id only
         }
         return english == null || english.equals(id) ? new String[] {id} : new String[] {english, id};
+    }
+
+    /** The English name the server renders for this item, or its id in title case. */
+    static String englishName(Material type) {
+        try {
+            String key = type.translationKey();
+            String rendered = PlainTextComponentSerializer.plainText().serialize(Component.translatable(key));
+            if (!rendered.equals(key)) {
+                return rendered;
+            }
+        } catch (RuntimeException ignored) {
+            // fall back to the id
+        }
+        StringBuilder name = new StringBuilder();
+        for (String word : type.getKey().getKey().split("_")) {
+            if (!word.isEmpty()) {
+                name.append(name.isEmpty() ? "" : " ").append(Character.toUpperCase(word.charAt(0))).append(word.substring(1));
+            }
+        }
+        return name.toString();
     }
 
     static String normalize(String s) {

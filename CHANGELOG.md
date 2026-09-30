@@ -1,9 +1,11 @@
 # Changelog
 
-## Unreleased
+## 1.1.0 - 2026-09-30
 - Renamed from WsSorting to GemsSorting (plugin name, package `com.github.gemssorting`, artifact `gems-sorting`). The config folder moves from `plugins/WsSorting/` to `plugins/GemsSorting/`.
-- The repository moved to GitHub; the README now contains the full player guide.
-- Build docs: the Paper 26.3 API needs JDK 25 to compile.
+- Item groups: a name tag renamed `.group` makes a chest collect the items of that group. `#name` matches keep priority: name receivers first, then group chests (nearest first), then overflow.
+- Web editor for the groups (built-in web server, `web.*` options): operators get a one-time login link with `/gems web`; search in Italian and English, drag and drop, click to add, bulk add, undo, autosave with conflict detection.
+- Italian names and inventory-style icons are built once from the official Minecraft client and cached per version.
+- The repository moved to GitHub; the README now contains the full player guide. Build docs: the Paper 26.3 API needs JDK 25 to compile.
 
 ## 1.0.0 - 2026-09-25
 - First release; replaces SmartItemSort on the server.

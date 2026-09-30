@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GemsSorting · Gruppi</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/app.css">
+<script src="/sortable.min.js" defer></script>
+<script src="/app.js" defer></script>
+</head>
+<body>
+
+<div id="loading" class="screen"><div class="spinner" aria-label="Caricamento"></div></div>
+
+<div id="login" class="screen" hidden>
+  <div class="login-card">
+    <img src="/favicon.svg" width="56" height="56" alt="">
+    <h1>GemsSorting</h1>
+    <p id="login-expired" class="login-warn" hidden>Il link è scaduto o è già stato usato. Chiedine uno nuovo.</p>
+    <p>Per entrare scrivi in gioco</p>
+    <p><code class="big">/gems web</code></p>
+    <p class="muted">e clicca il link che compare in chat. Solo gli operatori del server possono modificare i gruppi.</p>
+  </div>
+</div>
+
+<div id="app" hidden>
+  <header class="topbar">
+    <div class="brand">
+      <img src="/favicon.svg" width="28" height="28" alt="">
+      <div>
+        <strong>GemsSorting</strong>
+        <span class="muted">Gruppi di oggetti</span>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <span id="save-status" class="save-status" data-state="saved" role="status" aria-live="polite">Tutto salvato</span>
+      <button id="undo" class="btn ghost" type="button" disabled title="Annulla l'ultima modifica (Ctrl+Z)">↶ Annulla</button>
+      <span id="me" class="me"></span>
+      <button id="logout" class="btn ghost" type="button">Esci</button>
+    </div>
+  </header>
+
+  <details id="help" class="help" open>
+    <summary>Come funziona</summary>
+    <ol>
+      <li><b>Crea un gruppo</b> (es. <i>Redstone</i>) e <b>trascinaci dentro gli oggetti</b> dalla lista. Oppure scegli il gruppo in <i>Clic aggiunge a</i> e <b>clicca gli oggetti</b> per aggiungerli (un secondo clic li toglie).</li>
+      <li>In gioco <b>rinomina un cartellino</b> all'incudine con un punto davanti al nome del gruppo, es. <code>.Redstone</code> (il pulsante <i>Copia</i> sul gruppo lo copia per te).</li>
+      <li>Metti il cartellino in una <b>cornice sul baule</b>: riceverà tutti gli oggetti del gruppo dai bauli di input.</li>
+    </ol>
+    <p class="muted">Ogni oggetto sta in un solo gruppo. I cartellini <code>#nome</code> hanno la precedenza sui gruppi: un oggetto va prima nei bauli che lo cercano per nome, poi in quelli del suo gruppo, poi nell'overflow.</p>
+  </details>
+
+  <main class="layout">
+    <section class="panel catalog" aria-label="Oggetti">
+      <div class="panel-head">
+        <h2>Oggetti</h2>
+        <span id="catalog-count" class="muted"></span>
+      </div>
+      <div class="search">
+        <input id="search" type="search" autocomplete="off" spellcheck="false"
+               placeholder="Cerca in italiano o in inglese…" aria-label="Cerca un oggetto">
+      </div>
+      <div class="filters" role="radiogroup" aria-label="Mostra">
+        <button type="button" class="chip-btn" data-filter="all" aria-pressed="true">Tutti</button>
+        <button type="button" class="chip-btn" data-filter="free" aria-pressed="false">Senza gruppo</button>
+        <button type="button" class="chip-btn" data-filter="grouped" aria-pressed="false">Nei gruppi</button>
+      </div>
+      <label class="target">
+        <span>Clic aggiunge a</span>
+        <select id="target" aria-label="Gruppo a cui aggiungere gli oggetti cliccati"></select>
+      </label>
+      <div id="bulk" class="bulk" hidden>
+        <button id="bulk-add" type="button" class="btn primary small"></button>
+        <span id="bulk-note" class="muted"></span>
+      </div>
+      <p id="catalog-notice" class="notice" hidden></p>
+      <ul id="catalog" class="tiles" aria-label="Elenco oggetti"></ul>
+      <p id="catalog-empty" class="empty" hidden>Nessun oggetto trovato.</p>
+    </section>
+
+    <section class="panel groups-panel" aria-label="Gruppi">
+      <div class="panel-head">
+        <h2>Gruppi</h2>
+        <button id="new-group" type="button" class="btn primary">+ Nuovo gruppo</button>
+      </div>
+      <div id="groups" class="groups"></div>
+      <div id="groups-empty" class="empty big-empty" hidden>
+        <p><b>Nessun gruppo.</b></p>
+        <p class="muted">Crea il primo gruppo, ad esempio <i>Redstone</i> per ripetitori, comparatori, pistoni e simili.</p>
+        <button id="new-group-empty" type="button" class="btn primary">+ Crea un gruppo</button>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div id="toast" class="toast" role="status" aria-live="polite" hidden>
+  <span id="toast-text"></span>
+  <button id="toast-action" type="button" class="btn ghost small" hidden></button>
+</div>
+
+</body>
+</html>

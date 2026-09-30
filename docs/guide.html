@@ -17,7 +17,7 @@
   p { margin: 0 0 6pt; }
   code, .tag { font-family: Consolas, "Courier New", monospace; background: var(--soft); border: 0.75pt solid var(--line); border-radius: 3pt; padding: 0 3pt; font-size: 9.5pt; white-space: nowrap; }
 
-  .roles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8pt; }
+  .roles { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8pt; }
   .role { border: 0.75pt solid var(--line); border-radius: 6pt; padding: 9pt; break-inside: avoid; }
   .role svg { display: block; margin: 0 auto 6pt; }
   .role h3 { margin: 0 0 3pt; font-size: 11pt; text-align: center; }
@@ -62,7 +62,7 @@
 <h1>Sorting System</h1>
 <p class="sub">How to build automatic storage with item frames on chests.</p>
 
-<h2>The three chest types</h2>
+<h2>The chest types</h2>
 <p>Place an <b>item frame on a chest</b> and put one of these items in the frame. The item decides what the chest does.</p>
 
 <div class="roles">
@@ -86,6 +86,18 @@
     <h3>Receiver chest</h3>
     <div class="what">Frame holds a <b>Name Tag</b> named <span class="tag">#code</span></div>
     <p>Collects every item with <i>code</i> in its name. For example <span class="tag">#Sapling</span> collects all saplings.</p>
+  </div>
+  <div class="role">
+    <svg width="140" height="82" viewBox="0 0 140 82" aria-label="Chest with a .group name tag in a frame">
+      <use href="#chest"/><use href="#frame"/>
+      <path d="M94 44 L113 44 L121 51 L113 58 L94 58 Z" fill="#b9e3cf" stroke="#2f7d5b" stroke-width="2"/>
+      <circle cx="113" cy="51" r="2.2" fill="#2f7d5b"/>
+      <circle cx="101" cy="54" r="2.6" fill="#1f2328"/>
+      <path d="M92 47 Q86 40 90 34" fill="none" stroke="#555" stroke-width="1.5"/>
+    </svg>
+    <h3>Group chest</h3>
+    <div class="what">Frame holds a <b>Name Tag</b> named <span class="tag">.group</span></div>
+    <p>Collects every item of a <b>group</b> chosen by the operators, for example <span class="tag">.Redstone</span> for repeaters, comparators, pistons and more.</p>
   </div>
   <div class="role">
     <svg width="140" height="82" viewBox="0 0 140 82" aria-label="Chest with a Carrot on a Stick in a frame">
@@ -133,15 +145,21 @@
 
 <h2>Where each item goes</h2>
 <div class="flow">
-  <div class="box"><b>1. Best match</b>The chest whose tag matches best: the longest matching tag, then the closest chest.</div>
+  <div class="box"><b>1. Best # match</b>The longest matching <span class="tag">#</span> tag, then the closest chest.</div>
   <div class="arrow">&#8594;</div>
-  <div class="box"><b>2. Other matches</b>If that chest is full, the next matching chest.</div>
+  <div class="box"><b>2. Other # matches</b>If that chest is full, the next matching chest.</div>
   <div class="arrow">&#8594;</div>
-  <div class="box"><b>3. Overflow</b>Chests with a Carrot on a Stick, nearest first.</div>
+  <div class="box"><b>3. Its group</b>Chests with the item's <span class="tag">.group</span>, nearest first.</div>
   <div class="arrow">&#8594;</div>
-  <div class="box"><b>4. Stays put</b>If everything is full, the item stays in the input chest.</div>
+  <div class="box"><b>4. Overflow</b>Chests with a Carrot on a Stick, nearest first.</div>
+  <div class="arrow">&#8594;</div>
+  <div class="box"><b>5. Stays put</b>If everything is full, the item stays in the input chest.</div>
 </div>
 <p><b>Example:</b> you have a <span class="tag">#Oak</span> chest and a <span class="tag">#Sapling</span> chest. An Oak Sapling matches both, and it goes to <span class="tag">#Sapling</span> because that tag is longer. Oak Logs and Oak Planks go to <span class="tag">#Oak</span>.</p>
+<p><b>Names beat groups:</b> with a <span class="tag">#Repeater</span> chest and a <span class="tag">.Redstone</span> chest, repeaters go to <span class="tag">#Repeater</span>; the rest of the Redstone group goes to <span class="tag">.Redstone</span>.</p>
+
+<h2>Item groups</h2>
+<p>A group is a list of items picked by hand, for things whose names have nothing in common (redstone parts, farm drops, ores, …). Each item is in at most one group. The operators edit the groups in a web page: they type <span class="tag">/gems web</span> in game and open the link. To use a group, rename a Name Tag to a dot followed by the group name, for example <span class="tag">.Redstone</span> (upper and lower case don't matter), and put it in a frame on the chest. Changes to a group apply right away.</p>
 
 <h2>Good to know</h2>
 <ul class="tips">
@@ -152,7 +170,7 @@
   <li>You can have <b>several input chests</b>, and several chests with the same tag. When one fills up, the next one takes over.</li>
   <li>Changes to frames take up to <b>3 seconds</b> to take effect.</li>
   <li>Don't put an Eye of Ender on a receiver chest: that turns it into an input chest, and nothing gets sorted into it.</li>
-  <li><b>Nothing sorts?</b> Check that the name tag starts with <span class="tag">#</span> and was renamed in an anvil, that the frame is on the chest itself, and that the chest is within 128 blocks.</li>
+  <li><b>Nothing sorts?</b> Check that the name tag starts with <span class="tag">#</span> (or <span class="tag">.</span> for a group) and was renamed in an anvil, that the frame is on the chest itself, and that the chest is within 128 blocks. For a group, ask an operator whether the group exists.</li>
 </ul>
 
 <p class="foot">GemsSorting plugin</p>

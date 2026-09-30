@@ -25,12 +25,12 @@ import org.bukkit.util.BoundingBox;
 
 /**
  * Input chests: a chest with an item frame holding an Eye of Ender attached to it.
- * Receiver chests: a frame holding a name tag renamed "#code".
+ * Receiver chests: a frame holding a name tag renamed "#code" (item name) or ".group" (item group).
  * Overflow chests: a frame holding a Carrot on a Stick.
  *
  * Every item in an input chest goes to the receivers whose code appears in its name
- * (longest code first, nearest first), then to the overflow chests (nearest first).
- * Whatever does not fit stays in the input chest.
+ * (longest code first, nearest first), then to the receivers of its group (nearest first),
+ * then to the overflow chests (nearest first). Whatever does not fit stays in the input chest.
  */
 final class SortingService {
 
@@ -42,20 +42,26 @@ final class SortingService {
 
     private record Target(ChestKey key, Block block, String code, double distSq) {}
 
-    private record Network(List<Target> tagged, List<Target> overflow) {}
+    private record Network(List<Target> named, List<Target> grouped, List<Target> overflow) {
+        boolean isEmpty() {
+            return named.isEmpty() && grouped.isEmpty() && overflow.isEmpty();
+        }
+    }
 
     private record Cached<T>(T value, long expires) {}
 
     private final Plugin plugin;
     private final int radius;
+    private final GroupStore groups;
     private final ItemNames itemNames = new ItemNames();
     private final Set<ChestKey> pending = new HashSet<>();
     private final Map<ChestKey, Cached<Boolean>> inputCache = new HashMap<>();
     private final Map<ChestKey, Cached<Network>> networkCache = new HashMap<>();
 
-    SortingService(Plugin plugin, int radius) {
+    SortingService(Plugin plugin, int radius, GroupStore groups) {
         this.plugin = plugin;
         this.radius = radius;
+        this.groups = groups;
     }
 
     /** Sorts the chest behind this inventory on the next tick, if it is an input chest. */
@@ -89,7 +95,7 @@ final class SortingService {
             return;
         }
         Network network = network(key, block);
-        if (network.tagged().isEmpty() && network.overflow().isEmpty()) {
+        if (network.isEmpty()) {
             return;
         }
 
@@ -115,9 +121,17 @@ final class SortingService {
     /** Returns what could not be stored anywhere, or null if everything was stored. */
     private ItemStack deliver(ItemStack stack, Network network, Map<ChestKey, Optional<Inventory>> resolved) {
         List<Target> order = new ArrayList<>();
-        for (Target target : network.tagged()) {
+        for (Target target : network.named()) {
             if (itemNames.matches(stack.getType(), target.code())) {
                 order.add(target);
+            }
+        }
+        String group = groups.groupOf(stack.getType());
+        if (group != null) {
+            for (Target target : network.grouped()) {
+                if (target.code().equals(group)) {
+                    order.add(target);
+                }
             }
         }
         order.addAll(network.overflow());
@@ -173,7 +187,8 @@ final class SortingService {
 
         Set<ChestKey> inputs = new HashSet<>();
         inputs.add(self);
-        List<Target> tagged = new ArrayList<>();
+        List<Target> named = new ArrayList<>();
+        List<Target> grouped = new ArrayList<>();
         List<Target> overflow = new ArrayList<>();
         for (Entity entity : frames) {
             ItemFrame frame = (ItemFrame) entity;
@@ -194,9 +209,10 @@ final class SortingService {
             if (type == Material.ENDER_EYE) {
                 inputs.add(key);
             } else if (type == Material.NAME_TAG) {
-                String code = ItemNames.tagCode(item);
-                if (code != null) {
-                    tagged.add(new Target(key, chest, code, distSq));
+                ItemNames.Tag tag = ItemNames.tag(item);
+                if (tag != null) {
+                    (tag.kind() == ItemNames.Kind.NAME ? named : grouped)
+                            .add(new Target(key, chest, tag.code(), distSq));
                 }
             } else {
                 overflow.add(new Target(key, chest, null, distSq));
@@ -204,15 +220,17 @@ final class SortingService {
         }
 
         // Never send items into an input chest (including this one).
-        tagged.removeIf(target -> inputs.contains(target.key()));
+        named.removeIf(target -> inputs.contains(target.key()));
+        grouped.removeIf(target -> inputs.contains(target.key()));
         overflow.removeIf(target -> inputs.contains(target.key()));
-        tagged.sort(Comparator.comparingInt((Target target) -> -target.code().length())
+        named.sort(Comparator.comparingInt((Target target) -> -target.code().length())
                 .thenComparingDouble(Target::distSq));
+        grouped.sort(Comparator.comparingDouble(Target::distSq));
         overflow.sort(Comparator.comparingDouble(Target::distSq));
         Set<ChestKey> seen = new HashSet<>();
         overflow.removeIf(target -> !seen.add(target.key()));
 
-        Network network = new Network(tagged, overflow);
+        Network network = new Network(named, grouped, overflow);
         prune(networkCache, now);
         networkCache.put(self, new Cached<>(network, now + NETWORK_CACHE_MS));
         return network;

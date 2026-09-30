@@ -1,3 +1,15 @@
 # Max distance (blocks) from an input chest to its receiver / overflow chests.
 # Receiver chests must be in loaded chunks to be found.
 radius: 128
+
+# Web editor for the item groups used by ".group" name tags.
+# Operators get a login link with /gems web.
+web:
+  enabled: true
+  # Address and port of the built-in web server (the port must be an allocation of the server).
+  bind: 0.0.0.0
+  port: 8101
+  # Public address used in the /gems web links (https: the session cookie is marked Secure).
+  public-url: ""
+  # How long a browser stays logged in.
+  session-days: 30
