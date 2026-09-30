@@ -227,7 +227,7 @@ docker run --rm -u "$(id -u):$(id -g)" -v "$PWD/docs":/docs \
 1. Bump `<version>` in `pom.xml` and add an entry to `CHANGELOG.md`.
 2. Build, then copy the jar to `release/gems-sorting-<version>.jar`. Released jars are kept in the repo so
    anyone can deploy without building.
-3. Commit, tag and push: `git commit -am "Release x.y.z"`, `git tag vx.y.z`, `git push --follow-tags`.
+3. Commit, tag and push: `git commit -am "Release x.y.z"`, `git tag vx.y.z`, `git push && git push origin vx.y.z`.
 4. Deploy: rename the old jar in `/plugins` to `.bak` (never overwrite a loaded jar), upload the new one, and
    restart the server when no one is playing.
 
