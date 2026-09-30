@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="140" height="82" viewBox="0 0 140 82" aria-label="Chest with Eye of Ender in a frame">
+  <rect x="4" y="30" width="72" height="46" rx="3" fill="#b07a43" stroke="#6b4524" stroke-width="2.5"/>
+  <rect x="4" y="30" width="72" height="16" rx="3" fill="#c58b50" stroke="#6b4524" stroke-width="2.5"/>
+  <rect x="34" y="40" width="12" height="13" rx="1.5" fill="#d9d9d9" stroke="#555" stroke-width="1.5"/>
+  <rect x="84" y="28" width="46" height="46" rx="2" fill="#e9dcc7" stroke="#8a5a2e" stroke-width="4"/>
+  <circle cx="107" cy="51" r="13" fill="#3aa57a" stroke="#1d5e44" stroke-width="2"/>
+  <ellipse cx="107" cy="51" rx="4" ry="8" fill="#10261c"/>
+</svg>

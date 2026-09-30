@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="140" height="82" viewBox="0 0 140 82" aria-label="Chest with a Carrot on a Stick in a frame">
+  <rect x="4" y="30" width="72" height="46" rx="3" fill="#b07a43" stroke="#6b4524" stroke-width="2.5"/>
+  <rect x="4" y="30" width="72" height="16" rx="3" fill="#c58b50" stroke="#6b4524" stroke-width="2.5"/>
+  <rect x="34" y="40" width="12" height="13" rx="1.5" fill="#d9d9d9" stroke="#555" stroke-width="1.5"/>
+  <rect x="84" y="28" width="46" height="46" rx="2" fill="#e9dcc7" stroke="#8a5a2e" stroke-width="4"/>
+  <line x1="92" y1="68" x2="120" y2="36" stroke="#8a5a2e" stroke-width="3.5" stroke-linecap="round"/>
+  <path d="M120 36 Q126 48 116 60" fill="none" stroke="#666" stroke-width="1.2"/>
+  <path d="M113 58 L121 57 L114 68 Z" fill="#f08a24" stroke="#a4540f" stroke-width="1.2"/>
+  <path d="M117 57 L116 53 M119 57 L121 54" stroke="#3a8a2a" stroke-width="1.6"/>
+</svg>

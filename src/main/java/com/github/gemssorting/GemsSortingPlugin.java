@@ -1,8 +1,8 @@
-package com.github.wssorting;
+package com.github.gemssorting;
 
 import org.bukkit.plugin.java.JavaPlugin;
 
-public final class WsSortingPlugin extends JavaPlugin {
+public final class GemsSortingPlugin extends JavaPlugin {
 
     @Override
     public void onEnable() {

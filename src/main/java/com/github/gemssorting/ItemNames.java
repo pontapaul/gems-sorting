@@ -1,4 +1,4 @@
-package com.github.wssorting;
+package com.github.gemssorting;
 
 import java.util.EnumMap;
 import java.util.Locale;

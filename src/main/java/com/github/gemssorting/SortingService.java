@@ -1,4 +1,4 @@
-package com.github.wssorting;
+package com.github.gemssorting;
 
 import java.util.ArrayList;
 import java.util.Collection;
