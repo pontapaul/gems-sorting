@@ -1,6 +1,6 @@
 # GemsSorting
 
-Item-frame driven chest sorting for our Paper 26.3 server: put an item frame on a chest, and the item inside
+Item-frame driven chest sorting for Paper 26.3 servers: put an item frame on a chest, and the item inside
 the frame decides what the chest does. A printable version of the player guide is in
 [docs/Sorting-System-Guide.pdf](docs/Sorting-System-Guide.pdf) (source: [`docs/guide.html`](docs/guide.html)).
 
@@ -140,8 +140,8 @@ Changes apply to the next items sorted: there is no need to touch the chests or 
 | `radius` | `128` | Max distance (blocks) from an input chest to its receiver and overflow chests |
 | `web.enabled` | `true` | Starts the group editor |
 | `web.bind` | `0.0.0.0` | Address of the built-in web server |
-| `web.port` | `8101` | Port of the web server; on Pterodactyl it must be an allocation of the server |
-| `web.public-url` | `https://sorting.example.com` | Address used in the `/gems web` links; with `https://` the session cookie is `Secure` |
+| `web.port` | `8101` | Port of the web server; with a panel such as Pterodactyl it must be an allocation of the server |
+| `web.public-url` | *(empty)* | Address used in the `/gems web` links, e.g. `https://sorting.example.com`; with `https://` the session cookie is `Secure`. Empty: `http://<server-ip or localhost>:<port>` |
 | `web.session-days` | `30` | How long a browser stays logged in |
 
 Missing keys are added to an existing `config.yml` on startup.
@@ -235,8 +235,9 @@ docker run --rm -u "$(id -u):$(id -g)" -v "$PWD/docs":/docs \
 4. Deploy: rename the old jar in `/plugins` to `.bak` (never overwrite a loaded jar), upload the new one, and
    restart the server when no one is playing.
 
-The web editor needs its port published: in Pterodactyl, add an allocation on `0.0.0.0` with the port of
-`web.port` to the server, then restart it. Behind a reverse proxy, point the public domain at that port.
+The web editor needs its port reachable: open `web.port` on the server (on Pterodactyl, add an allocation
+on `0.0.0.0` with that port and restart the server). To publish it on a domain, put a reverse proxy with
+https in front of that port and set `web.public-url` to the domain.
 
 Up to 1.0.0 the plugin was called **WsSorting** (`ws-sorting-1.0.0.jar`, config in `plugins/WsSorting/`).
 When replacing it with GemsSorting, remove the old jar and move `plugins/WsSorting/config.yml` to

@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.1.4 - 2026-09-30
+- `web.public-url` is empty by default (it used to point to our own domain); when it is not set, links use `http://<server-ip or localhost>:<port>` and a warning is logged.
+
 ## 1.1.3 - 2026-09-30
 - Web editor: the whole interface is translated (English by default, Italian), following the same language selector as the item names. Server error messages follow it too; `/gems web` answers in the player's client language.
 - Web editor: link to the GitHub repository.

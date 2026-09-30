@@ -9,7 +9,8 @@ web:
   # Address and port of the built-in web server (the port must be an allocation of the server).
   bind: 0.0.0.0
   port: 8101
-  # Public address used in the /gems web links (https: the session cookie is marked Secure).
+  # Public address used in the /gems web links, e.g. "https://sorting.example.com" behind a reverse
+  # proxy (with https the session cookie is marked Secure). Empty: http://<server-ip or localhost>:<port>.
   public-url: ""
   # How long a browser stays logged in.
   session-days: 30

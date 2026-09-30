@@ -41,7 +41,10 @@ public final class GemsSortingPlugin extends JavaPlugin {
             String bind = getConfig().getString("web.bind", "0.0.0.0");
             int port = getConfig().getInt("web.port", 8101);
             if (publicUrl.isEmpty()) {
-                publicUrl = "http://" + getServer().getIp() + ":" + port;
+                String ip = getServer().getIp();
+                publicUrl = "http://" + (ip.isBlank() || ip.equals("0.0.0.0") ? "localhost" : ip) + ":" + port;
+                getLogger().warning("web.public-url is not set: /gems web links point to " + publicUrl
+                        + ", which only works from this machine or network");
             }
             Duration sessions = Duration.ofDays(Math.max(1, getConfig().getInt("web.session-days", 30)));
             Assets assets = new Assets(data.resolve("cache"), getServer().getMinecraftVersion(), getLogger());
