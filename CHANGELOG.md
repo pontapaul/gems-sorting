@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.1.3 - 2026-09-30
+- Web editor: the whole interface is translated (English by default, Italian), following the same language selector as the item names. Server error messages follow it too; `/gems web` answers in the player's client language.
+- Web editor: link to the GitHub repository.
+
 ## 1.1.2 - 2026-09-30
 - Web editor: item names are shown in one language only, English by default; a selector switches to Italian and the choice is kept in a cookie. Search still matches both languages.
 

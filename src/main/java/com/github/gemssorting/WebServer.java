@@ -33,11 +33,14 @@ import java.util.logging.Logger;
 final class WebServer {
 
     private static final String COOKIE = "gems_session";
+    /** Language chosen in the web interface ("en" or "it"), set by the page itself. */
+    private static final String LANG_COOKIE = "gems_lang";
     private static final int MAX_BODY = 1 << 20;
     private static final Map<String, String> STATIC = Map.of(
             "/", "index.html",
             "/index.html", "index.html",
             "/app.js", "app.js",
+            "/i18n.js", "i18n.js",
             "/app.css", "app.css",
             "/sortable.min.js", "sortable.min.js",
             "/favicon.svg", "favicon.svg");
@@ -128,15 +131,17 @@ final class WebServer {
 
     private void api(HttpExchange exchange, String method, String path) throws IOException {
         exchange.getResponseHeaders().set("Cache-Control", "no-store");
-        String token = cookie(exchange);
+        String token = cookie(exchange, COOKIE);
+        boolean it = "it".equals(cookie(exchange, LANG_COOKIE));
         Auth.Session session = auth.session(token);
         if (session == null) {
-            error(exchange, 401, "Accesso scaduto: scrivi /gems web in gioco per entrare.");
+            error(exchange, 401, it ? "Accesso scaduto: scrivi /gems web in gioco per entrare."
+                    : "Session expired: type /gems web in game to log in.");
             return;
         }
         // Writes need a custom header, which a cross-site form or image cannot send.
         if (!method.equals("GET") && !"1".equals(exchange.getRequestHeaders().getFirst("X-Gems"))) {
-            error(exchange, 403, "Richiesta non valida.");
+            error(exchange, 403, it ? "Richiesta non valida." : "Invalid request.");
             return;
         }
         switch (method + " " + path) {
@@ -168,25 +173,27 @@ final class WebServer {
                 try {
                     submitted = gson.fromJson(new String(body(exchange), StandardCharsets.UTF_8), GroupStore.State.class);
                 } catch (JsonParseException | IOException e) {
-                    error(exchange, 400, "Dati non validi.");
+                    error(exchange, 400, it ? "Dati non validi." : "Invalid data.");
                     return;
                 }
                 if (submitted == null) {
-                    error(exchange, 400, "Dati non validi.");
+                    error(exchange, 400, it ? "Dati non validi." : "Invalid data.");
                     return;
                 }
                 try {
                     json(exchange, 200, gson.toJsonTree(groups.replace(submitted, session.name() + " (web)")));
                 } catch (GroupStore.InvalidStateException e) {
-                    error(exchange, 400, e.getMessage());
+                    error(exchange, 400, e.message(it));
                 } catch (GroupStore.ConflictException e) {
                     JsonObject body = new JsonObject();
-                    body.addProperty("error", "Qualcun altro ha modificato i gruppi: ho ricaricato la versione aggiornata.");
+                    body.addProperty("error", it
+                            ? "Qualcun altro ha modificato i gruppi: ho ricaricato la versione aggiornata."
+                            : "Someone else changed the groups: the latest version has been reloaded.");
                     body.add("state", gson.toJsonTree(groups.state()));
                     json(exchange, 409, body);
                 }
             }
-            default -> error(exchange, 404, "Non trovato.");
+            default -> error(exchange, 404, it ? "Non trovato." : "Not found.");
         }
     }
 
@@ -250,11 +257,11 @@ final class WebServer {
         }
     }
 
-    private static String cookie(HttpExchange exchange) {
+    private static String cookie(HttpExchange exchange, String name) {
         for (String header : exchange.getRequestHeaders().getOrDefault("Cookie", java.util.List.of())) {
             for (String part : header.split(";")) {
                 String[] pair = part.trim().split("=", 2);
-                if (pair.length == 2 && pair[0].equals(COOKIE)) {
+                if (pair.length == 2 && pair[0].equals(name)) {
                     return pair[1];
                 }
             }

@@ -1,26 +1,40 @@
 <!doctype html>
-<html lang="it">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>GemsSorting · Gruppi</title>
+<title>GemsSorting</title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="/app.css">
 <script src="/sortable.min.js" defer></script>
+<script src="/i18n.js" defer></script>
 <script src="/app.js" defer></script>
 </head>
 <body>
 
-<div id="loading" class="screen"><div class="spinner" aria-label="Caricamento"></div></div>
+<svg class="sprites" width="0" height="0" aria-hidden="true">
+  <symbol id="github-mark" viewBox="0 0 16 16"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></symbol>
+</svg>
+
+<div id="loading" class="screen"><div class="spinner" aria-label="…"></div></div>
 
 <div id="login" class="screen" hidden>
   <div class="login-card">
     <img src="/favicon.svg" width="56" height="56" alt="">
     <h1>GemsSorting</h1>
-    <p id="login-expired" class="login-warn" hidden>Il link è scaduto o è già stato usato. Chiedine uno nuovo.</p>
-    <p>Per entrare scrivi in gioco</p>
+    <p id="login-expired" class="login-warn" data-i18n="login.expired" hidden></p>
+    <p data-i18n="login.type"></p>
     <p><code class="big">/gems web</code></p>
-    <p class="muted">e clicca il link che compare in chat. Solo gli operatori del server possono modificare i gruppi.</p>
+    <p class="muted" data-i18n="login.then"></p>
+    <div class="login-foot">
+      <select class="lang-select" data-i18n-aria="lang.label">
+        <option value="en">English</option>
+        <option value="it">Italiano</option>
+      </select>
+      <a class="github" href="https://github.com/pontapaul/gems-sorting" target="_blank" rel="noopener" data-i18n-title="github.title">
+        <svg width="16" height="16" aria-hidden="true"><use href="#github-mark"/></svg> GitHub
+      </a>
+    </div>
   </div>
 </div>
 
@@ -30,72 +44,75 @@
       <img src="/favicon.svg" width="28" height="28" alt="">
       <div>
         <strong>GemsSorting</strong>
-        <span class="muted">Gruppi di oggetti</span>
+        <span class="muted" data-i18n="brand.sub"></span>
       </div>
     </div>
     <div class="topbar-right">
-      <label class="lang" title="Lingua dei nomi degli oggetti (la ricerca funziona in entrambe)">
-        <span>Nomi</span>
-        <select id="lang" aria-label="Lingua dei nomi degli oggetti">
+      <label class="lang" data-i18n-title="lang.title">
+        <span data-i18n="lang.label"></span>
+        <select class="lang-select" data-i18n-aria="lang.label">
           <option value="en">English</option>
           <option value="it">Italiano</option>
         </select>
       </label>
-      <span id="save-status" class="save-status" data-state="saved" role="status" aria-live="polite">Tutto salvato</span>
-      <button id="undo" class="btn ghost" type="button" disabled title="Annulla l'ultima modifica (Ctrl+Z)">↶ Annulla</button>
+      <span id="save-status" class="save-status" data-state="saved" role="status" aria-live="polite"></span>
+      <button id="undo" class="btn ghost" type="button" disabled data-i18n="undo" data-i18n-title="undo.title"></button>
       <span id="me" class="me"></span>
-      <button id="logout" class="btn ghost" type="button">Esci</button>
+      <button id="logout" class="btn ghost" type="button" data-i18n="logout"></button>
+      <a class="github icon-link" href="https://github.com/pontapaul/gems-sorting" target="_blank" rel="noopener" data-i18n-title="github.title" data-i18n-aria="github.title">
+        <svg width="20" height="20" aria-hidden="true"><use href="#github-mark"/></svg>
+      </a>
     </div>
   </header>
 
   <details id="help" class="help" open>
-    <summary>Come funziona</summary>
+    <summary data-i18n="help.summary"></summary>
     <ol>
-      <li><b>Crea un gruppo</b> (es. <i>Redstone</i>) e <b>trascinaci dentro gli oggetti</b> dalla lista. Oppure scegli il gruppo in <i>Clic aggiunge a</i> e <b>clicca gli oggetti</b> per aggiungerli (un secondo clic li toglie).</li>
-      <li>In gioco <b>rinomina un cartellino</b> all'incudine con un punto davanti al nome del gruppo, es. <code>.Redstone</code> (il pulsante <i>Copia</i> sul gruppo lo copia per te).</li>
-      <li>Metti il cartellino in una <b>cornice sul baule</b>: riceverà tutti gli oggetti del gruppo dai bauli di input.</li>
+      <li data-i18n-html="help.1"></li>
+      <li data-i18n-html="help.2"></li>
+      <li data-i18n-html="help.3"></li>
     </ol>
-    <p class="muted">Ogni oggetto sta in un solo gruppo. I cartellini <code>#nome</code> hanno la precedenza sui gruppi: un oggetto va prima nei bauli che lo cercano per nome, poi in quelli del suo gruppo, poi nell'overflow.</p>
+    <p class="muted" data-i18n-html="help.note"></p>
   </details>
 
   <main class="layout">
-    <section class="panel catalog" aria-label="Oggetti">
+    <section class="panel catalog" data-i18n-aria="items.title">
       <div class="panel-head">
-        <h2>Oggetti</h2>
+        <h2 data-i18n="items.title"></h2>
         <span id="catalog-count" class="muted"></span>
       </div>
       <div class="search">
         <input id="search" type="search" autocomplete="off" spellcheck="false"
-               placeholder="Cerca un oggetto (inglese o italiano)…" aria-label="Cerca un oggetto">
+               data-i18n-placeholder="search.placeholder" data-i18n-aria="search.aria">
       </div>
-      <div class="filters" role="radiogroup" aria-label="Mostra">
-        <button type="button" class="chip-btn" data-filter="all" aria-pressed="true">Tutti</button>
-        <button type="button" class="chip-btn" data-filter="free" aria-pressed="false">Senza gruppo</button>
-        <button type="button" class="chip-btn" data-filter="grouped" aria-pressed="false">Nei gruppi</button>
+      <div class="filters" role="radiogroup" data-i18n-aria="filter.aria">
+        <button type="button" class="chip-btn" data-filter="all" aria-pressed="true" data-i18n="filter.all"></button>
+        <button type="button" class="chip-btn" data-filter="free" aria-pressed="false" data-i18n="filter.free"></button>
+        <button type="button" class="chip-btn" data-filter="grouped" aria-pressed="false" data-i18n="filter.grouped"></button>
       </div>
       <label class="target">
-        <span>Clic aggiunge a</span>
-        <select id="target" aria-label="Gruppo a cui aggiungere gli oggetti cliccati"></select>
+        <span data-i18n="target.label"></span>
+        <select id="target" data-i18n-aria="target.aria"></select>
       </label>
       <div id="bulk" class="bulk" hidden>
         <button id="bulk-add" type="button" class="btn primary small"></button>
         <span id="bulk-note" class="muted"></span>
       </div>
-      <p id="catalog-notice" class="notice" hidden></p>
-      <ul id="catalog" class="tiles" aria-label="Elenco oggetti"></ul>
-      <p id="catalog-empty" class="empty" hidden>Nessun oggetto trovato.</p>
+      <p id="catalog-notice" class="notice" data-i18n="catalog.preparing" hidden></p>
+      <ul id="catalog" class="tiles" data-i18n-aria="catalog.aria"></ul>
+      <p id="catalog-empty" class="empty" data-i18n="catalog.empty" hidden></p>
     </section>
 
-    <section class="panel groups-panel" aria-label="Gruppi">
+    <section class="panel groups-panel" data-i18n-aria="groups.title">
       <div class="panel-head">
-        <h2>Gruppi</h2>
-        <button id="new-group" type="button" class="btn primary">+ Nuovo gruppo</button>
+        <h2 data-i18n="groups.title"></h2>
+        <button id="new-group" type="button" class="btn primary" data-i18n="groups.new"></button>
       </div>
       <div id="groups" class="groups"></div>
       <div id="groups-empty" class="empty big-empty" hidden>
-        <p><b>Nessun gruppo.</b></p>
-        <p class="muted">Crea il primo gruppo, ad esempio <i>Redstone</i> per ripetitori, comparatori, pistoni e simili.</p>
-        <button id="new-group-empty" type="button" class="btn primary">+ Crea un gruppo</button>
+        <p><b data-i18n="groups.empty.title"></b></p>
+        <p class="muted" data-i18n-html="groups.empty.text"></p>
+        <button id="new-group-empty" type="button" class="btn primary" data-i18n="groups.empty.button"></button>
       </div>
     </section>
   </main>

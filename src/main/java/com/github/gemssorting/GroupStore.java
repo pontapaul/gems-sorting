@@ -45,8 +45,15 @@ final class GroupStore {
 
     /** Thrown when a submitted state is invalid; the message is shown in the web interface. */
     static final class InvalidStateException extends Exception {
-        InvalidStateException(String message) {
-            super(message);
+        private final String italian;
+
+        InvalidStateException(String english, String italian) {
+            super(english);
+            this.italian = italian;
+        }
+
+        String message(boolean inItalian) {
+            return inItalian ? italian : getMessage();
         }
     }
 
@@ -130,14 +137,17 @@ final class GroupStore {
                 name = name.substring(1).trim();
             }
             if (name.isEmpty()) {
-                throw new InvalidStateException("Ogni gruppo deve avere un nome.");
+                throw new InvalidStateException("Every group needs a name.", "Ogni gruppo deve avere un nome.");
             }
             if (name.length() > MAX_NAME_LENGTH) {
-                throw new InvalidStateException("Il nome \"" + name + "\" è troppo lungo (massimo " + MAX_NAME_LENGTH + " caratteri).");
+                throw new InvalidStateException(
+                        "The name \"" + name + "\" is too long (at most " + MAX_NAME_LENGTH + " characters).",
+                        "Il nome \"" + name + "\" è troppo lungo (massimo " + MAX_NAME_LENGTH + " caratteri).");
             }
             String code = ItemNames.normalize(name);
             if (!codes.add(code)) {
-                throw new InvalidStateException("Esistono due gruppi chiamati \"" + name + "\".");
+                throw new InvalidStateException("There are two groups called \"" + name + "\".",
+                        "Esistono due gruppi chiamati \"" + name + "\".");
             }
             Group out = new Group();
             out.id = group.id != null && group.id.matches("[A-Za-z0-9-]{1,64}") && ids.add(group.id)
@@ -148,14 +158,15 @@ final class GroupStore {
             for (String id : group.items == null ? List.<String>of() : group.items) {
                 Material type = material(id);
                 if (type == null) {
-                    throw new InvalidStateException("Oggetto sconosciuto: " + id);
+                    throw new InvalidStateException("Unknown item: " + id, "Oggetto sconosciuto: " + id);
                 }
                 String previous = owner.putIfAbsent(type, name);
                 if (previous != null) {
                     if (previous.equals(name)) {
                         continue; // duplicate inside the same group
                     }
-                    throw new InvalidStateException(id + " è sia in \"" + previous + "\" sia in \"" + name + "\".");
+                    throw new InvalidStateException(id + " is in both \"" + previous + "\" and \"" + name + "\".",
+                            id + " è sia in \"" + previous + "\" sia in \"" + name + "\".");
                 }
                 out.items.add(type.getKey().getKey());
             }

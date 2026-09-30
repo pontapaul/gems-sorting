@@ -101,16 +101,17 @@ Groups are edited in the web interface, **for server operators only**:
 
 In the editor:
 
-- **Item names** are shown in English by default; the *Nomi* selector at the top switches them to Italian
-  (the choice is kept in a cookie for a year).
+- **Language**: the interface and the item names are in English by default; the *Language* selector at the
+  top switches everything to Italian (the choice is kept in a cookie for a year). Messages from the server
+  follow the same choice, and `/gems web` answers in the language of the player's Minecraft client.
 - **Search** works in both languages whatever the names are shown in (accents and the item id work too:
   `polvere`, `redstone dust`, `redstone`). The filters show all items, only those without a group, or only
   those in a group.
 - **Drag and drop** items from the list into a group, from one group to another (the item moves), or back to
   the list (the item leaves its group). Items can also be reordered inside a group.
-- **Click to add**: pick a group in *Clic aggiunge a* (or press *Seleziona* on a group), then click items to
-  add them; a second click removes them. While searching, *Aggiungi N risultati* adds all results at once.
-- Every change is **saved automatically** and can be undone (*Annulla* or Ctrl+Z). *Copia* copies the
+- **Click to add**: pick a group in *Click adds to* (or press *Select* on a group), then click items to
+  add them; a second click removes them. While searching, *Add N results* adds all results at once.
+- Every change is **saved automatically** and can be undone (*Undo* or Ctrl+Z). *Copy* copies the
   `.Name` to rename the tag with. If two people edit at the same time, the second save is refused and the
   page reloads the latest version.
 
@@ -169,7 +170,7 @@ Files in `plugins/GemsSorting/`:
 | `WebServer.java` | Built-in HTTP server (JDK `HttpServer`): static files and JSON API |
 | `Assets.java` | Downloads the Minecraft client once to get Italian names and icons; builds the icon atlas |
 | `IconRenderer.java` | Draws inventory-style icons from the client's item models and textures |
-| `resources/web/` | The editor: `index.html`, `app.js`, `app.css`, SortableJS (drag and drop) |
+| `resources/web/` | The editor: `index.html`, `app.js`, `i18n.js` (English and Italian texts), `app.css`, SortableJS (drag and drop) |
 
 ### Web interface
 

@@ -35,9 +35,20 @@ function setLang(lang) {
   S.lang = lang;
   const secure = location.protocol === "https:" ? "; Secure" : "";
   document.cookie = `gems_lang=${lang}; Path=/; Max-Age=31536000; SameSite=Lax${secure}`;
-  sortItems();
-  catalogList = []; // force a full rebuild of the catalog
-  render();
+  applyLang();
+  if (!$("app").hidden) {
+    sortItems();
+    catalogList = []; // force a full rebuild of the catalog
+    render();
+  }
+}
+
+/** Translates the static texts and syncs the language selectors. */
+function applyLang() {
+  applyI18n(S.lang);
+  for (const select of document.querySelectorAll(".lang-select")) select.value = S.lang;
+  const status = $("save-status");
+  status.textContent = t(status.dataset.key || "status.saved");
 }
 
 /** The name of an item in the chosen language. */
@@ -72,6 +83,10 @@ async function api(method, path, body) {
 // ---------- Startup ----------
 
 async function start() {
+  applyLang();
+  for (const select of document.querySelectorAll(".lang-select")) {
+    select.addEventListener("change", (e) => setLang(e.target.value));
+  }
   const params = new URLSearchParams(location.search);
   if (params.has("login")) {
     $("login-expired").hidden = params.get("login") !== "expired";
@@ -99,7 +114,9 @@ function showLogin() {
 }
 
 function showFatal() {
-  $("loading").innerHTML = "<p>Il server non risponde. Riprova tra poco.</p>";
+  const p = document.createElement("p");
+  p.textContent = t("fatal");
+  $("loading").replaceChildren(p);
 }
 
 async function loadItems() {
@@ -211,14 +228,14 @@ function undo() {
   if (S.active && !S.groups.some((g) => g.id === S.active)) S.active = null;
   render();
   scheduleSave();
-  toast(`Annullato: ${last.description}`);
+  toast(t("toast.undone", { what: last.description }));
 }
 
 function addItems(groupId, ids, index) {
   const group = S.groups.find((g) => g.id === groupId);
   if (!group || ids.length === 0) return;
-  const label = ids.length === 1 ? itemName(ids[0]) : `${ids.length} oggetti`;
-  change(`${label} in “${group.name}”`, () => {
+  const label = ids.length === 1 ? itemName(ids[0]) : t("change.nItems", { n: ids.length });
+  change(t("change.added", { label, group: group.name }), () => {
     const set = new Set(ids);
     for (const g of S.groups) g.items = g.items.filter((id) => !set.has(id));
     const at = index === undefined ? group.items.length : Math.min(index, group.items.length);
@@ -229,16 +246,16 @@ function addItems(groupId, ids, index) {
 function removeItem(id) {
   const owner = ownerMap().get(id);
   if (!owner) return;
-  change(`rimosso ${itemName(id)} da “${owner.name}”`, () => {
+  change(t("change.removed", { item: itemName(id), group: owner.name }), () => {
     owner.items = owner.items.filter((x) => x !== id);
   });
-  toast(`${itemName(id)} tolto da “${owner.name}”`, "Annulla", undo);
+  toast(t("toast.removed", { item: itemName(id), group: owner.name }), t("toast.undo"), undo);
 }
 
 function toggleItem(id) {
   const group = S.groups.find((g) => g.id === S.active);
   if (!group) {
-    toast("Scegli prima il gruppo in “Clic aggiunge a”, oppure trascina l'oggetto in un gruppo.");
+    toast(t("toast.pickGroup"));
     $("target").focus();
     return;
   }
@@ -248,11 +265,12 @@ function toggleItem(id) {
 
 function createGroup() {
   let n = S.groups.length + 1;
-  let name = "Nuovo gruppo";
+  const base = t("group.defaultName");
+  let name = base;
   const codes = new Set(S.groups.map((g) => tagCode(g.name)));
-  while (codes.has(tagCode(name))) name = `Nuovo gruppo ${n++}`;
+  while (codes.has(tagCode(name))) name = `${base} ${n++}`;
   const id = newId();
-  change(`creato “${name}”`, () => S.groups.unshift({ id, name, items: [] }));
+  change(t("change.created", { name }), () => S.groups.unshift({ id, name, items: [] }));
   S.active = id;
   render();
   const input = document.querySelector(`.group[data-id="${id}"] .group-name`);
@@ -265,9 +283,9 @@ function createGroup() {
 function renameGroup(group, input) {
   const name = input.value.trim().replace(/\s+/g, " ").replace(/^[.#]+\s*/, "");
   let error = null;
-  if (!name) error = "Il nome non può essere vuoto.";
-  else if (name.length > MAX_NAME) error = `Massimo ${MAX_NAME} caratteri.`;
-  else if (S.groups.some((g) => g !== group && tagCode(g.name) === tagCode(name))) error = "Esiste già un gruppo con questo nome.";
+  if (!name) error = "name.empty";
+  else if (name.length > MAX_NAME) error = "name.tooLong";
+  else if (S.groups.some((g) => g !== group && tagCode(g.name) === tagCode(name))) error = "name.duplicate";
   if (error) {
     // Keep what was typed so it can be fixed; the group keeps its last valid name.
     S.drafts.set(group.id, { text: input.value, error });
@@ -280,17 +298,17 @@ function renameGroup(group, input) {
     return;
   }
   const old = group.name;
-  change(`rinominato “${old}” in “${name}”`, () => { group.name = name; });
+  change(t("change.renamed", { old, name }), () => { group.name = name; });
 }
 
 function deleteGroup(group) {
   S.confirmDelete = null;
-  change(`eliminato “${group.name}”`, () => {
+  change(t("change.deleted", { name: group.name }), () => {
     S.groups = S.groups.filter((g) => g !== group);
   });
   if (S.active === group.id) S.active = null;
   render();
-  toast(`Gruppo “${group.name}” eliminato`, "Annulla", undo);
+  toast(t("toast.deleted", { name: group.name }), t("toast.undo"), undo);
 }
 
 // ---------- Saving ----------
@@ -301,7 +319,7 @@ let dirty = false;
 
 function scheduleSave() {
   dirty = true;
-  setStatus("saving", "Salvataggio…");
+  setStatus("saving", "status.saving");
   clearTimeout(saveTimer);
   saveTimer = setTimeout(save, 500);
 }
@@ -315,21 +333,21 @@ async function save() {
     const { status, data } = await api("PUT", "/api/groups", body);
     if (status === 200) {
       S.version = data.version;
-      setStatus("saved", "Tutto salvato");
+      setStatus("saved", "status.saved");
     } else if (status === 409) {
       applyServerState(data.state);
       S.undo = [];
       dirty = false;
       render();
-      setStatus("saved", "Tutto salvato");
+      setStatus("saved", "status.saved");
       toast(data.error, null, null, true);
     } else {
-      setStatus("error", "Non salvato");
-      toast(data && data.error ? data.error : "Salvataggio non riuscito.", null, null, true);
+      setStatus("error", "status.error");
+      toast(data && data.error ? data.error : t("toast.saveFailed"), null, null, true);
     }
   } catch (e) {
     if (e.message !== "unauthorized") {
-      setStatus("error", "Non salvato: nuovo tentativo…");
+      setStatus("error", "status.retry");
       dirty = true;
       setTimeout(scheduleSave, 3000);
     }
@@ -339,10 +357,11 @@ async function save() {
   }
 }
 
-function setStatus(state, text) {
+function setStatus(state, key) {
   const el = $("save-status");
   el.dataset.state = state;
-  el.textContent = text;
+  el.dataset.key = key;
+  el.textContent = t(key);
 }
 
 window.addEventListener("beforeunload", (event) => {
@@ -360,7 +379,7 @@ function render() {
 
 function renderTarget() {
   const select = $("target");
-  const options = [new Option(S.groups.length ? "— scegli un gruppo —" : "— crea prima un gruppo —", "")];
+  const options = [new Option(t(S.groups.length ? "target.choose" : "target.none"), "")];
   for (const group of S.groups) options.push(new Option(`${group.name} (${group.items.length})`, group.id));
   select.replaceChildren(...options);
   select.value = S.active || "";
@@ -399,9 +418,8 @@ function renderCatalog(keepScroll = true) {
     $("catalog").scrollTop = scroll;
   }
   $("catalog-empty").hidden = list.length > 0;
-  $("catalog-count").textContent = `${list.length} di ${S.items.length}`;
+  $("catalog-count").textContent = t("items.count", { shown: list.length, total: S.items.length });
   $("catalog-notice").hidden = S.ready;
-  $("catalog-notice").textContent = "Sto preparando i nomi italiani e le icone (solo al primo avvio, ci vuole un minuto)…";
 
   // Bulk add: all search results into the selected group.
   const bulk = $("bulk");
@@ -409,8 +427,8 @@ function renderCatalog(keepScroll = true) {
   bulk.hidden = candidates.length === 0 || candidates.length > 300;
   if (!bulk.hidden) {
     const moved = candidates.filter((item) => owners.has(item.id)).length;
-    $("bulk-add").textContent = `Aggiungi ${candidates.length} ${candidates.length === 1 ? "risultato" : "risultati"} a “${active.name}”`;
-    $("bulk-note").textContent = moved ? `(${moved} ${moved === 1 ? "verrà spostato" : "verranno spostati"} da altri gruppi)` : "";
+    $("bulk-add").textContent = t("bulk.add", { n: candidates.length, group: active.name });
+    $("bulk-note").textContent = moved ? t("bulk.moved", { n: moved }) : "";
     $("bulk-add").onclick = () => addItems(active.id, candidates.map((item) => item.id));
   }
 }
@@ -481,7 +499,7 @@ function renderGroups() {
     name.defaultValue = group.name;
     if (draft) name.value = draft.text;
     name.maxLength = MAX_NAME;
-    name.setAttribute("aria-label", "Nome del gruppo");
+    name.setAttribute("aria-label", t("group.nameAria"));
     name.addEventListener("keydown", (e) => {
       if (e.key === "Enter") name.blur();
       if (e.key === "Escape") {
@@ -494,8 +512,8 @@ function renderGroups() {
     const del = document.createElement("button");
     del.className = "icon-btn";
     del.type = "button";
-    del.title = "Elimina il gruppo";
-    del.setAttribute("aria-label", `Elimina il gruppo ${group.name}`);
+    del.title = t("group.delete");
+    del.setAttribute("aria-label", t("group.deleteAria", { name: group.name }));
     del.textContent = "🗑";
     del.addEventListener("click", () => {
       if (group.items.length === 0) deleteGroup(group);
@@ -507,7 +525,7 @@ function renderGroups() {
     if (draft) {
       const error = document.createElement("div");
       error.className = "group-error";
-      error.textContent = `${draft.error} Il cartellino resta .${group.name} finché non lo correggi.`;
+      error.textContent = `${t(draft.error, { max: MAX_NAME })} ${t("name.keeps", { name: group.name })}`;
       card.append(error);
     }
 
@@ -515,18 +533,18 @@ function renderGroups() {
     meta.className = "group-meta";
     const tag = document.createElement("code");
     tag.textContent = "." + group.name;
-    tag.title = "Il nome da dare al cartellino all'incudine";
+    tag.title = t("group.tagTitle");
     const copy = document.createElement("button");
     copy.type = "button";
     copy.className = "btn ghost small";
-    copy.textContent = "Copia";
-    copy.title = "Copia il nome del cartellino";
+    copy.textContent = t("group.copy");
+    copy.title = t("group.copyTitle");
     copy.addEventListener("click", () => copyTag(group));
     const select = document.createElement("button");
     select.type = "button";
     select.className = "btn small select-btn";
-    select.textContent = group.id === S.active ? "✓ Selezionato" : "Seleziona";
-    select.title = "Con il gruppo selezionato, un clic su un oggetto lo aggiunge (o lo toglie)";
+    select.textContent = t(group.id === S.active ? "group.selected" : "group.select");
+    select.title = t("group.selectTitle");
     select.setAttribute("aria-pressed", String(group.id === S.active));
     select.addEventListener("click", () => {
       S.active = S.active === group.id ? null : group.id;
@@ -534,7 +552,7 @@ function renderGroups() {
     });
     const count = document.createElement("span");
     count.className = "count";
-    count.textContent = group.items.length === 1 ? "1 oggetto" : `${group.items.length} oggetti`;
+    count.textContent = t("group.count", { n: group.items.length });
     meta.append(tag, copy, select, count);
     card.append(meta);
 
@@ -542,16 +560,16 @@ function renderGroups() {
       const confirm = document.createElement("div");
       confirm.className = "confirm";
       const text = document.createElement("span");
-      text.textContent = `Eliminare il gruppo? I suoi ${group.items.length} oggetti torneranno senza gruppo.`;
+      text.textContent = t("group.confirmDelete", { n: group.items.length });
       const yes = document.createElement("button");
       yes.type = "button";
       yes.className = "btn danger small";
-      yes.textContent = "Elimina";
+      yes.textContent = t("group.deleteButton");
       yes.addEventListener("click", () => deleteGroup(group));
       const no = document.createElement("button");
       no.type = "button";
       no.className = "btn small";
-      no.textContent = "Annulla";
+      no.textContent = t("group.cancel");
       no.addEventListener("click", () => { S.confirmDelete = null; render(); });
       confirm.append(text, yes, no);
       card.append(confirm);
@@ -575,7 +593,7 @@ function renderGroups() {
       x.type = "button";
       x.className = "x";
       x.textContent = "×";
-      x.setAttribute("aria-label", `Togli ${itemName(id)} dal gruppo`);
+      x.setAttribute("aria-label", t("group.removeAria", { item: itemName(id) }));
       x.addEventListener("click", () => removeItem(id));
       chip.append(label, x);
       chips.append(chip);
@@ -605,7 +623,7 @@ function renderGroups() {
           const group = S.groups.find((g) => g.id === list.dataset.group);
           const from = evt.oldIndex;
           const to = evt.newIndex;
-          setTimeout(() => change(`riordinato “${group.name}”`, () => {
+          setTimeout(() => change(t("change.reordered", { name: group.name }), () => {
             const [id] = group.items.splice(from, 1);
             group.items.splice(to, 0, id);
           }));
@@ -644,9 +662,9 @@ async function copyTag(group) {
   const text = "." + group.name;
   try {
     await navigator.clipboard.writeText(text);
-    toast(`Copiato ${text}: rinomina un cartellino così all'incudine`);
+    toast(t("toast.copied", { text }));
   } catch (_) {
-    toast(`Rinomina un cartellino così: ${text}`);
+    toast(t("toast.renameLike", { text }));
   }
 }
 
@@ -697,8 +715,6 @@ function bindUi() {
       toggleItem(tile.dataset.id);
     }
   });
-  $("lang").value = S.lang;
-  $("lang").addEventListener("change", (e) => setLang(e.target.value));
   $("target").addEventListener("change", (e) => {
     S.active = e.target.value || null;
     render();

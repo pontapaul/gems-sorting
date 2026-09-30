@@ -109,7 +109,13 @@ button:focus-visible, input:focus-visible, .tile:focus-visible, summary:focus-vi
 .topbar-right { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .me { color: var(--muted); font-size: 13px; }
 .lang { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); }
-.lang select {
+.sprites { position: absolute; width: 0; height: 0; overflow: hidden; }
+.github { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); text-decoration: none; font-size: 13px; }
+.github:hover { color: var(--ink); }
+.icon-link { width: 32px; height: 32px; justify-content: center; border-radius: 8px; }
+.icon-link:hover { background: var(--surface-2); }
+.login-foot { display: flex; align-items: center; justify-content: center; gap: 16px; margin-top: 20px; }
+.login-foot select, .lang select {
   font: inherit; color: var(--ink); padding: 4px 6px; border-radius: 8px;
   border: 1px solid var(--line); background: var(--surface);
 }
@@ -248,7 +254,7 @@ button:focus-visible, input:focus-visible, .tile:focus-visible, summary:focus-vi
   border-radius: 0 0 var(--radius) var(--radius);
 }
 .chips:empty::before {
-  content: "Trascina qui gli oggetti";
+  content: var(--drop-here, "");
   color: var(--muted); font-size: 13px; margin: auto; padding: 12px;
 }
 .chip {
