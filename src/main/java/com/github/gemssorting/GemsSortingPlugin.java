@@ -13,8 +13,11 @@ public final class GemsSortingPlugin extends JavaPlugin {
     @Override
     public void onEnable() {
         saveDefaultConfig();
+        // Add keys missing from an older config.yml, then read it back: getString(path, def)
+        // returns def, not the jar's default, for keys that are not in the file.
         getConfig().options().copyDefaults(true);
         saveConfig();
+        reloadConfig();
 
         Path data = getDataFolder().toPath();
         GroupStore groups = new GroupStore(data.resolve("groups.json"), getLogger());

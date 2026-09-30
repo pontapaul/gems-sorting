@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.1.1 - 2026-09-30
+- Fix: when upgrading from a config.yml without the `web` section, the first start ignored the defaults (login links pointed to `http://0.0.0.0:8101`).
+
 ## 1.1.0 - 2026-09-30
 - Renamed from WsSorting to GemsSorting (plugin name, package `com.github.gemssorting`, artifact `gems-sorting`). The config folder moves from `plugins/WsSorting/` to `plugins/GemsSorting/`.
 - Item groups: a name tag renamed `.group` makes a chest collect the items of that group. `#name` matches keep priority: name receivers first, then group chests (nearest first), then overflow.
