@@ -236,7 +236,10 @@ docker run --rm -u "$(id -u):$(id -g)" -v "$PWD/docs":/docs \
    anyone can deploy without building.
 3. Commit, tag and push: `git commit -am "Release x.y.z"`, `git tag vx.y.z`, `git push && git push origin vx.y.z`.
 4. Deploy: rename the old jar in `/plugins` to `.bak` (never overwrite a loaded jar), upload the new one, and
-   restart the server when no one is playing.
+   restart the server when no one is playing. Without a restart, with [PlugManX](https://modrinth.com/plugin/plugmanx)
+   installed: `/plugman unload GemsSorting`, then `/plugman load gems-sorting-<version>` (the jar file name
+   without `.jar`). The plugin stops its web server on unload, so the port is free for the new version;
+   groups, sessions and the icon cache are kept on disk.
 
 The web editor needs its port reachable: open `web.port` on the server (on Pterodactyl, add an allocation
 on `0.0.0.0` with that port and restart the server). To publish it on a domain, put a reverse proxy with
