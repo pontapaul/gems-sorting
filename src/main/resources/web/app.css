@@ -158,6 +158,13 @@ button:focus-visible, input:focus-visible, .tile:focus-visible, summary:focus-vi
   padding: 9px 12px; border-radius: 8px;
   border: 1px solid var(--line); background: var(--surface-2); color: var(--ink);
 }
+.group-search { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+.group-search input {
+  flex: 1; min-width: 0; font: inherit; font-size: 15px;
+  padding: 9px 12px; border-radius: 8px;
+  border: 1px solid var(--line); background: var(--surface-2); color: var(--ink);
+}
+.group-search .muted { white-space: nowrap; font-size: 13px; }
 .filters { display: flex; gap: 6px; margin: 10px 0; flex-wrap: wrap; }
 .chip-btn {
   font: inherit; font-size: 13px; cursor: pointer;

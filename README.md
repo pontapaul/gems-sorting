@@ -76,7 +76,9 @@ they are in the Redstone group; comparators, pistons and the rest of the group g
 - **Stay nearby:** far-away chests in areas that aren't loaded are skipped. Their items go to the overflow
   chest instead.
 - **Double chests** work. The frame can go on either half.
-- Trapped chests and glow item frames work too. The frame can go on any side of the chest, including the top.
+- **Any chest works**, for every role (input, receiver, group, overflow): normal and trapped chests, copper
+  chests (also oxidized or waxed) and barrels. Ender chests and shulker boxes don't. Glow item frames work too,
+  and the frame can go on any side of the chest, including the top.
 - You can have **several input chests**, and several chests with the same tag. When one fills up, the next one
   takes over.
 - Changes to frames take up to **3 seconds** to take effect.
@@ -107,6 +109,7 @@ In the editor:
 - **Search** works in both languages whatever the names are shown in (accents and the item id work too:
   `polvere`, `redstone dust`, `redstone`). The filters show all items, only those without a group, or only
   those in a group.
+- **Find a group** with the search field above the groups (`oak`, or the tag itself: `.redstone`).
 - **Drag and drop** items from the list into a group, from one group to another (the item moves), or back to
   the list (the item leaves its group). Items can also be reordered inside a group.
 - **Click to add**: pick a group in *Click adds to* (or press *Select* on a group), then click items to

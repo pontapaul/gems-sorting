@@ -10,6 +10,7 @@ const S = {
   active: null,      // id of the selected group: clicking an item adds it there
   filter: "all",     // all | free | grouped
   query: "",
+  groupQuery: "",    // filter of the group cards
   undo: [],
   confirmDelete: null,
   drafts: new Map(),  // group id -> { text, error } for a name being fixed
@@ -264,6 +265,10 @@ function toggleItem(id) {
 }
 
 function createGroup() {
+  if (S.groupQuery) {
+    S.groupQuery = "";
+    $("group-search").value = "";
+  }
   let n = S.groups.length + 1;
   const base = t("group.defaultName");
   let name = base;
@@ -484,8 +489,12 @@ function renderGroups() {
   const words = queryWords();
   const container = $("groups");
   const fragment = document.createDocumentFragment();
+  const gq = tagCode(S.groupQuery).replace(/^[.#]+\s*/, "");
+  const visible = gq ? S.groups.filter((g) => tagCode(g.name).includes(gq)) : S.groups;
+  $("groups-count").textContent = S.groups.length ? t("groups.count", { shown: visible.length, total: S.groups.length }) : "";
+  $("groups-none").hidden = !(S.groups.length && gq && visible.length === 0);
 
-  for (const group of S.groups) {
+  for (const group of visible) {
     const card = document.createElement("article");
     card.className = "group" + (group.id === S.active ? " active" : "");
     card.dataset.id = group.id;
@@ -718,6 +727,17 @@ function bindUi() {
   $("target").addEventListener("change", (e) => {
     S.active = e.target.value || null;
     render();
+  });
+  $("group-search").addEventListener("input", (e) => {
+    S.groupQuery = e.target.value;
+    renderGroups();
+  });
+  $("group-search").addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {
+      e.target.value = "";
+      S.groupQuery = "";
+      renderGroups();
+    }
   });
   $("new-group").addEventListener("click", createGroup);
   $("new-group-empty").addEventListener("click", createGroup);

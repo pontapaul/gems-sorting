@@ -108,6 +108,12 @@
         <h2 data-i18n="groups.title"></h2>
         <button id="new-group" type="button" class="btn primary" data-i18n="groups.new"></button>
       </div>
+      <div class="group-search">
+        <input id="group-search" type="search" autocomplete="off" spellcheck="false"
+               data-i18n-placeholder="groups.search" data-i18n-aria="groups.search">
+        <span id="groups-count" class="muted"></span>
+      </div>
+      <p id="groups-none" class="empty" data-i18n="groups.none" hidden></p>
       <div id="groups" class="groups"></div>
       <div id="groups-empty" class="empty big-empty" hidden>
         <p><b data-i18n="groups.empty.title"></b></p>

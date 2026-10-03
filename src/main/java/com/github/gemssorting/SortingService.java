@@ -3,6 +3,7 @@ package com.github.gemssorting;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -14,7 +15,7 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
-import org.bukkit.block.Chest;
+import org.bukkit.block.Container;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.ItemFrame;
 import org.bukkit.event.inventory.InventoryType;
@@ -24,7 +25,8 @@ import org.bukkit.plugin.Plugin;
 import org.bukkit.util.BoundingBox;
 
 /**
- * Input chests: a chest with an item frame holding an Eye of Ender attached to it.
+ * Input chests: a chest (or copper chest, trapped chest, barrel) with an item frame holding an
+ * Eye of Ender attached to it.
  * Receiver chests: a frame holding a name tag renamed "#code" (item name) or ".group" (item group).
  * Overflow chests: a frame holding a Carrot on a Stick.
  *
@@ -66,7 +68,8 @@ final class SortingService {
 
     /** Sorts the chest behind this inventory on the next tick, if it is an input chest. */
     void schedule(Inventory inventory) {
-        if (inventory == null || inventory.getType() != InventoryType.CHEST) {
+        if (inventory == null
+                || (inventory.getType() != InventoryType.CHEST && inventory.getType() != InventoryType.BARREL)) {
             return;
         }
         Location location = inventory.getLocation();
@@ -74,7 +77,7 @@ final class SortingService {
             return;
         }
         Block block = location.getBlock();
-        if (!isChest(block)) {
+        if (!isStorage(block)) {
             return; // chest minecarts, plugin GUIs, ...
         }
         ChestKey key = keyOf(halves(block));
@@ -87,7 +90,7 @@ final class SortingService {
     }
 
     private void sort(Block block, ChestKey key) {
-        if (!isLoaded(block) || !isChest(block) || !isInput(key, halves(block))) {
+        if (!isLoaded(block) || !isStorage(block) || !isInput(key, halves(block))) {
             return;
         }
         Inventory input = inventoryOf(block);
@@ -198,7 +201,7 @@ final class SortingService {
                 continue;
             }
             Block chest = attachedBlock(frame);
-            if (!isLoaded(chest) || !isChest(chest)) {
+            if (!isLoaded(chest) || !isStorage(chest)) {
                 continue;
             }
             double distSq = chest.getLocation().add(0.5, 0.5, 0.5).distanceSquared(center);
@@ -287,15 +290,32 @@ final class SortingService {
     }
 
     private static Inventory inventoryOf(Block block) {
-        if (!isLoaded(block) || !isChest(block)) {
+        if (!isLoaded(block) || !isStorage(block)) {
             return null;
         }
-        return block.getState(false) instanceof Chest chest ? chest.getInventory() : null;
+        // For a double chest this is the inventory of both halves.
+        return block.getState(false) instanceof Container container ? container.getInventory() : null;
     }
 
-    private static boolean isChest(Block block) {
-        Material type = block.getType();
-        return type == Material.CHEST || type == Material.TRAPPED_CHEST;
+    /**
+     * Blocks that can be input, receiver or overflow storage: chests, trapped chests, every copper
+     * chest (including oxidized and waxed ones) and barrels. Ender chests (per player) and shulker
+     * boxes (they move around) are left out.
+     */
+    private static final Set<Material> STORAGE = storageTypes();
+
+    private static Set<Material> storageTypes() {
+        Set<Material> types = EnumSet.of(Material.CHEST, Material.TRAPPED_CHEST, Material.BARREL);
+        for (Material type : Material.values()) {
+            if (!type.isLegacy() && type.isBlock() && type.name().endsWith("COPPER_CHEST")) {
+                types.add(type);
+            }
+        }
+        return types;
+    }
+
+    private static boolean isStorage(Block block) {
+        return STORAGE.contains(block.getType());
     }
 
     private static boolean isLoaded(Block block) {

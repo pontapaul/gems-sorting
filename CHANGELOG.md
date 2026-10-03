@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.2.0 - 2026-10-03
+- Copper chests (every oxidation stage, waxed or not) and barrels work like chests in every role: input, `#name` and `.group` receivers, overflow. Copper double chests are supported.
+- Web editor: search field to filter the groups by name (the `.tag` form works too).
+
 ## 1.1.4 - 2026-09-30
 - `web.public-url` is empty by default (it used to point to our own domain); when it is not set, links use `http://<server-ip or localhost>:<port>` and a warning is logged.
 
