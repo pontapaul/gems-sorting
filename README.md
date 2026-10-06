@@ -21,6 +21,7 @@ Place an **item frame on a chest** and put one of these items in the frame. The 
 | <img src="docs/img/input.svg" width="120" alt="Chest with an Eye of Ender in a frame"> | **Input chest** | an **Eye of Ender** | Anything you put in here is sorted **instantly**. It works with items dropped in by hand, hoppers and droppers. |
 | <img src="docs/img/receiver.svg" width="120" alt="Chest with a name tag in a frame"> | **Receiver chest** | a **Name Tag** named `#code` | Collects every item with *code* in its name. For example `#Sapling` collects all saplings. |
 | <img src="docs/img/group.svg" width="120" alt="Chest with a .group name tag in a frame"> | **Group chest** | a **Name Tag** named `.group` | Collects every item of a group made in the [web editor](#item-groups-and-the-web-editor). For example `.Redstone` collects repeaters, comparators, pistons, … |
+| <img src="docs/img/group.svg" width="120" alt="Chest with a +.group name tag in a frame"> | **Stock chest** | a **Name Tag** named `+.group` or `+#code` | Backstock for the shelves with the same tag (`.group` or `#code`): gets items only when they are full, and **refills them** when someone takes items out. |
 | <img src="docs/img/overflow.svg" width="120" alt="Chest with a Carrot on a Stick in a frame"> | **Overflow chest** | a **Carrot on a Stick** | Gets the leftovers: items with no matching name tag, and items whose tagged chests are full. |
 
 ### Setting it up
@@ -60,8 +61,9 @@ The text after `#` is looked up inside the item's name. Upper and lower case don
 flowchart LR
     A["<b>1. Best #name match</b><br>longest matching tag,<br>then the closest chest"] -->|full| B["<b>2. Other #name matches</b><br>the next matching chest"]
     B -->|full| G["<b>3. Its .group</b><br>chests of the item's group,<br>nearest first"]
-    G -->|full| C["<b>4. Overflow</b><br>Carrot on a Stick chests,<br>nearest first"]
-    C -->|full| D["<b>5. Stays put</b><br>the item stays<br>in the input chest"]
+    G -->|full| K["<b>4. Stock</b><br>+#name, then +.group chests,<br>same order"]
+    K -->|full| C["<b>5. Overflow</b><br>Carrot on a Stick chests,<br>nearest first"]
+    C -->|full| D["<b>6. Stays put</b><br>the item stays<br>in the input chest"]
 ```
 
 **Example:** you have a `#Oak` chest and a `#Sapling` chest. An Oak Sapling matches both, and it goes to
@@ -69,6 +71,22 @@ flowchart LR
 
 **Names beat groups:** with a `#Repeater` chest and a `.Redstone` chest, repeaters go to `#Repeater` even if
 they are in the Redstone group; comparators, pistons and the rest of the group go to `.Redstone`.
+
+### Shelves and stock
+
+A chest with a normal tag (`.Oak`, `#Sapling`) is a **shelf**: the chest you take things from. A chest with the
+same tag and a `+` in front (`+.Oak`, `+#Sapling`) is its **stock**:
+
+- Sorted items fill the shelves first, then the stock, and only then go to overflow. Distance doesn't matter:
+  a shelf always comes before a stock chest, even if the stock is closer to the input chest.
+- When you close a shelf after taking something out, or a hopper pulls items from it, the shelf is
+  **refilled right away** from its stock chests (nearest first), up to the last slot. Only items that belong to
+  the tag are moved, so anything else you put in a stock chest by hand stays there.
+- A stock chest can be up to **64 blocks** from its shelf (`stock-radius`). One stock can serve several
+  shelves with the same tag, and one shelf can have several stock chests.
+- Every chest that items are moved into or out of is **tidied**: partial stacks are merged and items are packed
+  from the first slot in the game's order, like the sort button of Inventory Profiles Next. A chest that
+  someone has open is never rearranged.
 
 ### Good to know
 
@@ -127,9 +145,12 @@ Changes apply to the next items sorted: there is no need to touch the chests or 
   Eye of Ender frame.
 - Matching is a case-insensitive substring of the item's English name or its id (`oak_sapling`); anvil
   names are ignored.
-- Targets are ordered: `#name` receivers by tag length (longest first) then distance from the input chest,
-  then the `.group` chests of the item's group (nearest first), then the overflow chests (nearest first).
-  A full chest spills over to the next target; what is left stays in the input chest.
+- Targets are ordered: `#name` shelves by tag length (longest first) then distance from the input chest,
+  then the `.group` shelves of the item's group (nearest first), then the stock chests in the same order,
+  then the overflow chests (nearest first). A full chest spills over to the next target; what is left stays
+  in the input chest.
+- Closing a shelf, or a hopper taking items out of it, schedules a refill 5 ticks later (so a hopper causes
+  one refill, not one per item). The refill skips shelves that someone has open.
 - Groups are stored in `plugins/GemsSorting/groups.json` and looked up when each item is sorted, so edits in
   the web editor apply immediately.
 - The scan of frames around an input chest is cached for about 3 seconds. Only loaded chunks are scanned.
@@ -140,7 +161,8 @@ Changes apply to the next items sorted: there is no need to touch the chests or 
 
 | Key | Default | Meaning |
 |---|---|---|
-| `radius` | `128` | Max distance (blocks) from an input chest to its receiver and overflow chests |
+| `radius` | `128` | Max distance (blocks) from an input chest to its receiver, stock and overflow chests |
+| `stock-radius` | `64` | Max distance (blocks) from a shelf to the stock chests that refill it |
 | `web.enabled` | `true` | Starts the group editor |
 | `web.bind` | `0.0.0.0` | Address of the built-in web server |
 | `web.port` | `8101` | Port of the web server; with a panel such as Pterodactyl it must be an allocation of the server |
@@ -166,7 +188,8 @@ Files in `plugins/GemsSorting/`:
 | `GemsSortingPlugin.java` | Entry point; reads `config.yml`, starts the web interface |
 | `SortingListener.java` | Inventory events (click, drag, close, hopper move); schedules a sort of the touched chest |
 | `SortingService.java` | Finds input, receiver, group and overflow chests via item frames and moves the items |
-| `ItemNames.java` | Parses `#code` / `.group` name tags and matches item names |
+| `ItemNames.java` | Parses `#code` / `.group` / `+` stock name tags and matches item names |
+| `InventorySorter.java` | Tidies a chest: merges partial stacks and packs items in the game's order |
 | `GroupStore.java` | The groups: `groups.json`, validation (unique names, one group per item), versioning |
 | `GemsCommand.java` | `/gems web`: login links for operators and the console |
 | `Auth.java` | One-time login links, browser sessions, operator check |

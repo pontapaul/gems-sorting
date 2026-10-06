@@ -151,12 +151,17 @@
   <div class="arrow">&#8594;</div>
   <div class="box"><b>3. Its group</b>Chests with the item's <span class="tag">.group</span>, nearest first.</div>
   <div class="arrow">&#8594;</div>
-  <div class="box"><b>4. Overflow</b>Chests with a Carrot on a Stick, nearest first.</div>
+  <div class="box"><b>4. Stock</b>Chests with a <span class="tag">+</span> tag, same order.</div>
   <div class="arrow">&#8594;</div>
-  <div class="box"><b>5. Stays put</b>If everything is full, the item stays in the input chest.</div>
+  <div class="box"><b>5. Overflow</b>Chests with a Carrot on a Stick, nearest first.</div>
+  <div class="arrow">&#8594;</div>
+  <div class="box"><b>6. Stays put</b>If everything is full, the item stays in the input chest.</div>
 </div>
 <p><b>Example:</b> you have a <span class="tag">#Oak</span> chest and a <span class="tag">#Sapling</span> chest. An Oak Sapling matches both, and it goes to <span class="tag">#Sapling</span> because that tag is longer. Oak Logs and Oak Planks go to <span class="tag">#Oak</span>.</p>
 <p><b>Names beat groups:</b> with a <span class="tag">#Repeater</span> chest and a <span class="tag">.Redstone</span> chest, repeaters go to <span class="tag">#Repeater</span>; the rest of the Redstone group goes to <span class="tag">.Redstone</span>.</p>
+
+<h2>Shelves and stock</h2>
+<p>A chest with <span class="tag">.Oak</span> is a <b>shelf</b>. A chest with the same tag and a plus in front, <span class="tag">+.Oak</span>, is its <b>stock</b>: it only gets items when the shelves are full, and it <b>refills the shelf</b> as soon as you take something and close it (or a hopper pulls from it). The stock can be up to 64 blocks away, for example on the floor above. Chests that items move in or out of are tidied: stacks merged and items in order.</p>
 
 <h2>Item groups</h2>
 <p>A group is a list of items picked by hand, for things whose names have nothing in common (redstone parts, farm drops, ores, …). Each item is in at most one group. The operators edit the groups in a web page: they type <span class="tag">/gems web</span> in game and open the link. To use a group, rename a Name Tag to a dot followed by the group name, for example <span class="tag">.Redstone</span> (upper and lower case don't matter), and put it in a frame on the chest. Changes to a group apply right away.</p>

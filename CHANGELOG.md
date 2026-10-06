@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.3.0 - 2026-10-06
+- Stock chests: a tag with `+` in front (`+.group`, `+#code`) marks backstock for the shelves with the same tag. Sorted items fill the shelves first, then the stock, then overflow. Closing a shelf, or a hopper pulling from it, refills it from its stock within `stock-radius` (new option, default 64 blocks).
+- Chests that items are moved into or out of are tidied: partial stacks merged, items packed in the game's order (like the sort button of Inventory Profiles Next). Chests someone has open are left alone.
+
 ## 1.2.0 - 2026-10-03
 - Copper chests (every oxidation stage, waxed or not) and barrels work like chests in every role: input, `#name` and `.group` receivers, overflow. Copper double chests are supported.
 - Web editor: search field to filter the groups by name (the `.tag` form works too).

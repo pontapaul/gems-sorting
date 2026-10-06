@@ -32,7 +32,12 @@ import org.bukkit.util.BoundingBox;
  *
  * Every item in an input chest goes to the receivers whose code appears in its name
  * (longest code first, nearest first), then to the receivers of its group (nearest first),
- * then to the overflow chests (nearest first). Whatever does not fit stays in the input chest.
+ * then to the stock chests ("+#code", "+.group") in the same order, then to the overflow chests
+ * (nearest first). Whatever does not fit stays in the input chest.
+ *
+ * Shelves (the chests with a tag without "+") are refilled from the stock chests with the same tag
+ * within the stock radius when a player closes them or a hopper takes items out. Every chest
+ * that items are moved into or out of is tidied afterwards (see {@link InventorySorter}).
  */
 final class SortingService {
 
@@ -44,25 +49,36 @@ final class SortingService {
 
     private record Target(ChestKey key, Block block, String code, double distSq) {}
 
-    private record Network(List<Target> named, List<Target> grouped, List<Target> overflow) {
+    private record Network(List<Target> named, List<Target> grouped,
+                           List<Target> namedStock, List<Target> groupedStock, List<Target> overflow) {
         boolean isEmpty() {
-            return named.isEmpty() && grouped.isEmpty() && overflow.isEmpty();
+            return named.isEmpty() && grouped.isEmpty() && namedStock.isEmpty() && groupedStock.isEmpty()
+                    && overflow.isEmpty();
         }
     }
 
+    private static final long REFILL_DELAY_TICKS = 5;
+
     private record Cached<T>(T value, long expires) {}
+
+    private record StockKey(ChestKey shelf, ItemNames.Tag tag) {}
 
     private final Plugin plugin;
     private final int radius;
+    private final int stockRadius;
     private final GroupStore groups;
     private final ItemNames itemNames = new ItemNames();
     private final Set<ChestKey> pending = new HashSet<>();
     private final Map<ChestKey, Cached<Boolean>> inputCache = new HashMap<>();
     private final Map<ChestKey, Cached<Network>> networkCache = new HashMap<>();
+    private final Set<ChestKey> pendingRefill = new HashSet<>();
+    private final Map<ChestKey, Cached<List<ItemNames.Tag>>> shelfCache = new HashMap<>();
+    private final Map<StockKey, Cached<List<Target>>> stockCache = new HashMap<>();
 
-    SortingService(Plugin plugin, int radius, GroupStore groups) {
+    SortingService(Plugin plugin, int radius, int stockRadius, GroupStore groups) {
         this.plugin = plugin;
         this.radius = radius;
+        this.stockRadius = stockRadius;
         this.groups = groups;
     }
 
@@ -103,6 +119,7 @@ final class SortingService {
         }
 
         Map<ChestKey, Optional<Inventory>> resolved = new HashMap<>();
+        Set<Inventory> touched = new HashSet<>();
         ItemStack[] contents = input.getStorageContents();
         boolean changed = false;
         for (int i = 0; i < contents.length; i++) {
@@ -110,7 +127,7 @@ final class SortingService {
             if (stack == null || stack.getType().isAir()) {
                 continue;
             }
-            ItemStack rest = deliver(stack, network, resolved);
+            ItemStack rest = deliver(stack, network, resolved, touched);
             if (rest == null || rest.getAmount() != stack.getAmount()) {
                 contents[i] = rest;
                 changed = true;
@@ -118,22 +135,28 @@ final class SortingService {
         }
         if (changed) {
             input.setStorageContents(contents);
+            touched.add(input);
+            touched.forEach(InventorySorter::sort);
         }
     }
 
     /** Returns what could not be stored anywhere, or null if everything was stored. */
-    private ItemStack deliver(ItemStack stack, Network network, Map<ChestKey, Optional<Inventory>> resolved) {
+    private ItemStack deliver(ItemStack stack, Network network, Map<ChestKey, Optional<Inventory>> resolved,
+                              Set<Inventory> touched) {
         List<Target> order = new ArrayList<>();
-        for (Target target : network.named()) {
-            if (itemNames.matches(stack.getType(), target.code())) {
-                order.add(target);
-            }
-        }
         String group = groups.groupOf(stack.getType());
-        if (group != null) {
-            for (Target target : network.grouped()) {
-                if (target.code().equals(group)) {
+        // Shelves first, then stock, each by name then by group.
+        for (List<Target> named : List.of(network.named(), network.namedStock())) {
+            for (Target target : named) {
+                if (itemNames.matches(stack.getType(), target.code())) {
                     order.add(target);
+                }
+            }
+            if (group != null) {
+                for (Target target : named == network.named() ? network.grouped() : network.groupedStock()) {
+                    if (target.code().equals(group)) {
+                        order.add(target);
+                    }
                 }
             }
         }
@@ -148,12 +171,182 @@ final class SortingService {
                 continue;
             }
             Map<Integer, ItemStack> left = inventory.addItem(remaining.clone());
-            if (left.isEmpty()) {
+            ItemStack rest = left.isEmpty() ? null : left.values().iterator().next();
+            if (rest == null || rest.getAmount() != remaining.getAmount()) {
+                touched.add(inventory);
+            }
+            if (rest == null) {
                 return null;
             }
-            remaining = left.values().iterator().next();
+            remaining = rest;
         }
         return remaining;
+    }
+
+    /**
+     * Refills the shelf behind this inventory from its stock chests, a few ticks later (so a hopper
+     * taking items one by one causes a single refill).
+     */
+    void scheduleRefill(Inventory inventory) {
+        if (inventory == null
+                || (inventory.getType() != InventoryType.CHEST && inventory.getType() != InventoryType.BARREL)) {
+            return;
+        }
+        Location location = inventory.getLocation();
+        if (location == null || location.getWorld() == null) {
+            return;
+        }
+        Block block = location.getBlock();
+        if (!isStorage(block)) {
+            return;
+        }
+        ChestKey key = keyOf(halves(block));
+        if (pendingRefill.add(key)) {
+            plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+                pendingRefill.remove(key);
+                refill(block, key);
+            }, REFILL_DELAY_TICKS);
+        }
+    }
+
+    private void refill(Block block, ChestKey key) {
+        if (!isLoaded(block) || !isStorage(block)) {
+            return;
+        }
+        List<ItemNames.Tag> tags = shelfTags(key, halves(block));
+        if (tags.isEmpty()) {
+            return;
+        }
+        Inventory shelf = inventoryOf(block);
+        if (shelf == null || !shelf.getViewers().isEmpty()) {
+            return; // someone is using it: the refill happens when they close it
+        }
+        Set<Inventory> touched = new HashSet<>();
+        for (ItemNames.Tag tag : tags) {
+            for (Target target : stockOf(key, block, tag)) {
+                Inventory stock = inventoryOf(target.block());
+                if (stock == null || stock.equals(shelf)) {
+                    continue;
+                }
+                ItemStack[] contents = stock.getStorageContents();
+                boolean moved = false;
+                for (int i = 0; i < contents.length; i++) {
+                    ItemStack stack = contents[i];
+                    if (stack == null || stack.getType().isAir() || !belongs(stack, tag)) {
+                        continue;
+                    }
+                    Map<Integer, ItemStack> left = shelf.addItem(stack.clone());
+                    int rest = left.isEmpty() ? 0 : left.values().iterator().next().getAmount();
+                    if (rest != stack.getAmount()) {
+                        moved = true;
+                        if (rest == 0) {
+                            contents[i] = null;
+                        } else {
+                            stack.setAmount(rest);
+                        }
+                    }
+                }
+                if (moved) {
+                    stock.setStorageContents(contents);
+                    touched.add(stock);
+                    touched.add(shelf);
+                }
+                if (shelf.firstEmpty() == -1 && !hasRoomFor(shelf, contents, tag)) {
+                    break; // full
+                }
+            }
+        }
+        touched.forEach(InventorySorter::sort);
+    }
+
+    /** True if the item belongs on a shelf with this tag. */
+    private boolean belongs(ItemStack stack, ItemNames.Tag tag) {
+        return tag.kind() == ItemNames.Kind.NAME
+                ? itemNames.matches(stack.getType(), tag.code())
+                : tag.code().equals(groups.groupOf(stack.getType()));
+    }
+
+    /** With no empty slot left, true if some stack of the stock could still top up a partial stack. */
+    private boolean hasRoomFor(Inventory shelf, ItemStack[] stock, ItemNames.Tag tag) {
+        for (ItemStack have : shelf.getStorageContents()) {
+            if (have == null || have.getAmount() >= have.getMaxStackSize()) {
+                continue;
+            }
+            for (ItemStack stack : stock) {
+                if (stack != null && have.isSimilar(stack) && belongs(stack, tag)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /** The shelf tags (without "+") on this chest; empty if it is not a shelf. */
+    private List<ItemNames.Tag> shelfTags(ChestKey key, List<Block> halves) {
+        long now = System.currentTimeMillis();
+        Cached<List<ItemNames.Tag>> cached = shelfCache.get(key);
+        if (cached != null && cached.expires() > now) {
+            return cached.value();
+        }
+        List<ItemNames.Tag> tags = new ArrayList<>();
+        boolean input = false;
+        for (Block half : halves) {
+            for (Entity entity : framesOn(half)) {
+                ItemStack item = ((ItemFrame) entity).getItem();
+                if (item.getType() == Material.ENDER_EYE) {
+                    input = true;
+                } else if (item.getType() == Material.NAME_TAG) {
+                    ItemNames.Tag tag = ItemNames.tag(item);
+                    if (tag != null && !tag.stock() && !tags.contains(tag)) {
+                        tags.add(tag);
+                    }
+                }
+            }
+        }
+        List<ItemNames.Tag> result = input ? List.of() : List.copyOf(tags);
+        prune(shelfCache, now);
+        shelfCache.put(key, new Cached<>(result, now + NETWORK_CACHE_MS));
+        return result;
+    }
+
+    /** Stock chests ("+" tags) with this tag within the stock radius of the shelf, nearest first. */
+    private List<Target> stockOf(ChestKey shelfKey, Block shelf, ItemNames.Tag tag) {
+        StockKey cacheKey = new StockKey(shelfKey, tag);
+        long now = System.currentTimeMillis();
+        Cached<List<Target>> cached = stockCache.get(cacheKey);
+        if (cached != null && cached.expires() > now) {
+            return cached.value();
+        }
+        Location center = shelf.getLocation().add(0.5, 0.5, 0.5);
+        double maxDistSq = (double) stockRadius * stockRadius;
+        List<Target> stock = new ArrayList<>();
+        Set<ChestKey> seen = new HashSet<>();
+        for (Entity entity : shelf.getWorld().getNearbyEntities(
+                BoundingBox.of(center, stockRadius + 1, stockRadius + 1, stockRadius + 1),
+                entity -> entity instanceof ItemFrame)) {
+            ItemStack item = ((ItemFrame) entity).getItem();
+            if (item.getType() != Material.NAME_TAG) {
+                continue;
+            }
+            ItemNames.Tag found = ItemNames.tag(item);
+            if (found == null || !found.stock() || !found.shelf().equals(tag)) {
+                continue;
+            }
+            Block chest = attachedBlock((ItemFrame) entity);
+            if (!isLoaded(chest) || !isStorage(chest)) {
+                continue;
+            }
+            double distSq = chest.getLocation().add(0.5, 0.5, 0.5).distanceSquared(center);
+            ChestKey key = keyOf(halves(chest));
+            if (distSq <= maxDistSq && !key.equals(shelfKey) && seen.add(key)) {
+                stock.add(new Target(key, chest, tag.code(), distSq));
+            }
+        }
+        stock.sort(Comparator.comparingDouble(Target::distSq));
+        List<Target> result = List.copyOf(stock);
+        prune(stockCache, now);
+        stockCache.put(cacheKey, new Cached<>(result, now + NETWORK_CACHE_MS));
+        return result;
     }
 
     private boolean isInput(ChestKey key, List<Block> halves) {
@@ -192,6 +385,8 @@ final class SortingService {
         inputs.add(self);
         List<Target> named = new ArrayList<>();
         List<Target> grouped = new ArrayList<>();
+        List<Target> namedStock = new ArrayList<>();
+        List<Target> groupedStock = new ArrayList<>();
         List<Target> overflow = new ArrayList<>();
         for (Entity entity : frames) {
             ItemFrame frame = (ItemFrame) entity;
@@ -214,8 +409,10 @@ final class SortingService {
             } else if (type == Material.NAME_TAG) {
                 ItemNames.Tag tag = ItemNames.tag(item);
                 if (tag != null) {
-                    (tag.kind() == ItemNames.Kind.NAME ? named : grouped)
-                            .add(new Target(key, chest, tag.code(), distSq));
+                    List<Target> list = tag.kind() == ItemNames.Kind.NAME
+                            ? (tag.stock() ? namedStock : named)
+                            : (tag.stock() ? groupedStock : grouped);
+                    list.add(new Target(key, chest, tag.code(), distSq));
                 }
             } else {
                 overflow.add(new Target(key, chest, null, distSq));
@@ -223,17 +420,20 @@ final class SortingService {
         }
 
         // Never send items into an input chest (including this one).
-        named.removeIf(target -> inputs.contains(target.key()));
-        grouped.removeIf(target -> inputs.contains(target.key()));
-        overflow.removeIf(target -> inputs.contains(target.key()));
-        named.sort(Comparator.comparingInt((Target target) -> -target.code().length())
-                .thenComparingDouble(Target::distSq));
+        for (List<Target> list : List.of(named, grouped, namedStock, groupedStock, overflow)) {
+            list.removeIf(target -> inputs.contains(target.key()));
+        }
+        Comparator<Target> byName = Comparator.comparingInt((Target target) -> -target.code().length())
+                .thenComparingDouble(Target::distSq);
+        named.sort(byName);
+        namedStock.sort(byName);
         grouped.sort(Comparator.comparingDouble(Target::distSq));
+        groupedStock.sort(Comparator.comparingDouble(Target::distSq));
         overflow.sort(Comparator.comparingDouble(Target::distSq));
         Set<ChestKey> seen = new HashSet<>();
         overflow.removeIf(target -> !seen.add(target.key()));
 
-        Network network = new Network(named, grouped, overflow);
+        Network network = new Network(named, grouped, namedStock, groupedStock, overflow);
         prune(networkCache, now);
         networkCache.put(self, new Cached<>(network, now + NETWORK_CACHE_MS));
         return network;
@@ -322,7 +522,7 @@ final class SortingService {
         return block.getWorld().isChunkLoaded(block.getX() >> 4, block.getZ() >> 4);
     }
 
-    private static <T> void prune(Map<ChestKey, Cached<T>> cache, long now) {
+    private static <K, T> void prune(Map<K, Cached<T>> cache, long now) {
         if (cache.size() > CACHE_PRUNE_SIZE) {
             cache.values().removeIf(cached -> cached.expires() <= now);
         }

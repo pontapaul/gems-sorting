@@ -31,9 +31,10 @@ public final class GemsSortingPlugin extends JavaPlugin {
         }
 
         int radius = Math.max(1, getConfig().getInt("radius", 128));
-        SortingService service = new SortingService(this, radius, groups);
+        int stockRadius = Math.max(1, getConfig().getInt("stock-radius", 64));
+        SortingService service = new SortingService(this, radius, stockRadius, groups);
         getServer().getPluginManager().registerEvents(new SortingListener(service), this);
-        getLogger().info("Sorting radius: " + radius + " blocks");
+        getLogger().info("Sorting radius: " + radius + " blocks, stock radius: " + stockRadius + " blocks");
 
         Auth auth = null;
         String publicUrl = getConfig().getString("web.public-url", "").replaceAll("/+$", "");

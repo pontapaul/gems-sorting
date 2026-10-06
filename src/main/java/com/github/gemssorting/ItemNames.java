@@ -14,13 +14,23 @@ final class ItemNames {
 
     private final Map<Material, String[]> names = new EnumMap<>(Material.class);
 
-    /** A receiver name tag: "#code" matches item names, ".group" matches a group from the web editor. */
-    record Tag(Kind kind, String code) {}
+    /**
+     * A receiver name tag: "#code" matches item names, ".group" matches a group from the web editor.
+     * With a "+" in front ("+.group", "+#code") the chest is stock: it gets items only when the
+     * shelves with the same tag are full, and refills them when items are taken out.
+     */
+    record Tag(Kind kind, String code, boolean stock) {
+        /** The same tag on a shelf (stock == false). */
+        Tag shelf() {
+            return new Tag(kind, code, false);
+        }
+    }
 
     enum Kind { NAME, GROUP }
 
     /**
-     * The "#code" or ".group" of a name tag, normalized, or null if the item is not a valid tag.
+     * The "#code", ".group", "+#code" or "+.group" of a name tag, normalized, or null if the item
+     * is not a valid tag.
      */
     static Tag tag(ItemStack tag) {
         ItemMeta meta = tag.getItemMeta();
@@ -32,6 +42,10 @@ final class ItemNames {
             return null;
         }
         String text = PlainTextComponentSerializer.plainText().serialize(name).trim();
+        boolean stock = text.startsWith("+");
+        if (stock) {
+            text = text.substring(1).trim();
+        }
         Kind kind;
         if (text.startsWith("#")) {
             kind = Kind.NAME;
@@ -41,7 +55,7 @@ final class ItemNames {
             return null;
         }
         String code = normalize(text.substring(1));
-        return code.isEmpty() ? null : new Tag(kind, code);
+        return code.isEmpty() ? null : new Tag(kind, code, stock);
     }
 
     /** True if the code appears in the item's English name or its id (e.g. "oak sapling"). */

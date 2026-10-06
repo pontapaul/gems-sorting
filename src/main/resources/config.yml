@@ -2,6 +2,10 @@
 # Receiver chests must be in loaded chunks to be found.
 radius: 128
 
+# Max distance (blocks) from a shelf (chest with a ".group" or "#name" tag) to the stock chests
+# ("+.group", "+#name") that refill it.
+stock-radius: 64
+
 # Web editor for the item groups used by ".group" name tags.
 # Operators get a login link with /gems web.
 web:
