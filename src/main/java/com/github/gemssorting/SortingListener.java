@@ -31,11 +31,12 @@ final class SortingListener implements Listener {
         service.schedule(event.getView().getTopInventory());
     }
 
-    /** Closing a chest sorts it (input) or refills it from its stock (shelf). */
+    /** Closing a chest sorts it (input), refills it from its stock (shelf), then tidies it. */
     @EventHandler(priority = EventPriority.MONITOR)
     public void onClose(InventoryCloseEvent event) {
         service.schedule(event.getView().getTopInventory());
         service.scheduleRefill(event.getView().getTopInventory());
+        service.scheduleTidy(event.getView().getTopInventory());
     }
 
     /** Hoppers, droppers and hopper minecarts feeding a chest, or taking items out of a shelf. */

@@ -84,9 +84,12 @@ same tag and a `+` in front (`+.Oak`, `+#Sapling`) is its **stock**:
   the tag are moved, so anything else you put in a stock chest by hand stays there.
 - A stock chest can be up to **64 blocks** from its shelf (`stock-radius`). One stock can serve several
   shelves with the same tag, and one shelf can have several stock chests.
-- Every chest that items are moved into or out of is **tidied**: partial stacks are merged and items are packed
-  from the first slot in the game's order, like the sort button of Inventory Profiles Next. A chest that
-  someone has open is never rearranged.
+- A chest of the system (input, shelf, stock, overflow) is **tidied when you close it**, never while it is open:
+  partial stacks are merged and items are packed from the first slot in the order of the sort button of
+  Inventory Profiles Next with its default rule. That is: items without a custom name first, then by their
+  position in the creative inventory search tab (items missing from it, such as command blocks, come first),
+  then by enchantments, damage, name and potion; renamed items go last, by name. Other chests are never
+  touched.
 
 ### Good to know
 
@@ -151,6 +154,9 @@ Changes apply to the next items sorted: there is no need to touch the chests or 
   in the input chest.
 - Closing a shelf, or a hopper taking items out of it, schedules a refill 5 ticks later (so a hopper causes
   one refill, not one per item). The refill skips shelves that someone has open.
+- The creative search tab order is read from the server at startup (Mojang-mapped server classes, the same
+  list the client builds). If that fails on a future version, a warning is logged and chests are sorted by
+  item id order instead.
 - Groups are stored in `plugins/GemsSorting/groups.json` and looked up when each item is sorted, so edits in
   the web editor apply immediately.
 - The scan of frames around an input chest is cached for about 3 seconds. Only loaded chunks are scanned.
@@ -189,7 +195,7 @@ Files in `plugins/GemsSorting/`:
 | `SortingListener.java` | Inventory events (click, drag, close, hopper move); schedules a sort of the touched chest |
 | `SortingService.java` | Finds input, receiver, group and overflow chests via item frames and moves the items |
 | `ItemNames.java` | Parses `#code` / `.group` / `+` stock name tags and matches item names |
-| `InventorySorter.java` | Tidies a chest: merges partial stacks and packs items in the game's order |
+| `InventorySorter.java` | Tidies a chest like Inventory Profiles Next: merges partial stacks, creative inventory order |
 | `GroupStore.java` | The groups: `groups.json`, validation (unique names, one group per item), versioning |
 | `GemsCommand.java` | `/gems web`: login links for operators and the console |
 | `Auth.java` | One-time login links, browser sessions, operator check |

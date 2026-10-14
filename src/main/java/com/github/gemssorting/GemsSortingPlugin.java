@@ -34,6 +34,7 @@ public final class GemsSortingPlugin extends JavaPlugin {
         int stockRadius = Math.max(1, getConfig().getInt("stock-radius", 64));
         SortingService service = new SortingService(this, radius, stockRadius, groups);
         getServer().getPluginManager().registerEvents(new SortingListener(service), this);
+        InventorySorter.loadCreativeOrder(getServer(), getLogger());
         getLogger().info("Sorting radius: " + radius + " blocks, stock radius: " + stockRadius + " blocks");
 
         Auth auth = null;

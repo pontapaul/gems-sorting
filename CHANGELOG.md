@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.3.1 - 2026-10-14
+- Chests are tidied only when a player closes them (input, shelf, stock and overflow chests), never while sorting or refilling, so nothing moves while a chest is open.
+- The tidy order now matches the default sort of Inventory Profiles Next: items without a custom name first, then the creative inventory search tab order (read from the server), then enchantments, damage, name and potion; renamed items last, by name.
+
 ## 1.3.0 - 2026-10-06
 - Stock chests: a tag with `+` in front (`+.group`, `+#code`) marks backstock for the shelves with the same tag. Sorted items fill the shelves first, then the stock, then overflow. Closing a shelf, or a hopper pulling from it, refills it from its stock within `stock-radius` (new option, default 64 blocks).
 - Chests that items are moved into or out of are tidied: partial stacks merged, items packed in the game's order (like the sort button of Inventory Profiles Next). Chests someone has open are left alone.

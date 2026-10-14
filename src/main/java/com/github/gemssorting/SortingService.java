@@ -36,8 +36,9 @@ import org.bukkit.util.BoundingBox;
  * (nearest first). Whatever does not fit stays in the input chest.
  *
  * Shelves (the chests with a tag without "+") are refilled from the stock chests with the same tag
- * within the stock radius when a player closes them or a hopper takes items out. Every chest
- * that items are moved into or out of is tidied afterwards (see {@link InventorySorter}).
+ * within the stock radius when a player closes them or a hopper takes items out. A chest of the
+ * system (input, shelf, stock, overflow) is tidied when a player closes it, never while it is open
+ * (see {@link InventorySorter}).
  */
 final class SortingService {
 
@@ -58,6 +59,8 @@ final class SortingService {
     }
 
     private static final long REFILL_DELAY_TICKS = 5;
+    /** After the sort of an input chest (next tick) and the refill of a shelf. */
+    private static final long TIDY_DELAY_TICKS = REFILL_DELAY_TICKS + 1;
 
     private record Cached<T>(T value, long expires) {}
 
@@ -73,6 +76,8 @@ final class SortingService {
     private final Map<ChestKey, Cached<Network>> networkCache = new HashMap<>();
     private final Set<ChestKey> pendingRefill = new HashSet<>();
     private final Map<ChestKey, Cached<List<ItemNames.Tag>>> shelfCache = new HashMap<>();
+    private final Set<ChestKey> pendingTidy = new HashSet<>();
+    private final Map<ChestKey, Cached<Boolean>> systemCache = new HashMap<>();
     private final Map<StockKey, Cached<List<Target>>> stockCache = new HashMap<>();
 
     SortingService(Plugin plugin, int radius, int stockRadius, GroupStore groups) {
@@ -119,7 +124,6 @@ final class SortingService {
         }
 
         Map<ChestKey, Optional<Inventory>> resolved = new HashMap<>();
-        Set<Inventory> touched = new HashSet<>();
         ItemStack[] contents = input.getStorageContents();
         boolean changed = false;
         for (int i = 0; i < contents.length; i++) {
@@ -127,7 +131,7 @@ final class SortingService {
             if (stack == null || stack.getType().isAir()) {
                 continue;
             }
-            ItemStack rest = deliver(stack, network, resolved, touched);
+            ItemStack rest = deliver(stack, network, resolved);
             if (rest == null || rest.getAmount() != stack.getAmount()) {
                 contents[i] = rest;
                 changed = true;
@@ -135,14 +139,11 @@ final class SortingService {
         }
         if (changed) {
             input.setStorageContents(contents);
-            touched.add(input);
-            touched.forEach(InventorySorter::sort);
         }
     }
 
     /** Returns what could not be stored anywhere, or null if everything was stored. */
-    private ItemStack deliver(ItemStack stack, Network network, Map<ChestKey, Optional<Inventory>> resolved,
-                              Set<Inventory> touched) {
+    private ItemStack deliver(ItemStack stack, Network network, Map<ChestKey, Optional<Inventory>> resolved) {
         List<Target> order = new ArrayList<>();
         String group = groups.groupOf(stack.getType());
         // Shelves first, then stock, each by name then by group.
@@ -172,9 +173,6 @@ final class SortingService {
             }
             Map<Integer, ItemStack> left = inventory.addItem(remaining.clone());
             ItemStack rest = left.isEmpty() ? null : left.values().iterator().next();
-            if (rest == null || rest.getAmount() != remaining.getAmount()) {
-                touched.add(inventory);
-            }
             if (rest == null) {
                 return null;
             }
@@ -221,7 +219,6 @@ final class SortingService {
         if (shelf == null || !shelf.getViewers().isEmpty()) {
             return; // someone is using it: the refill happens when they close it
         }
-        Set<Inventory> touched = new HashSet<>();
         for (ItemNames.Tag tag : tags) {
             for (Target target : stockOf(key, block, tag)) {
                 Inventory stock = inventoryOf(target.block());
@@ -248,15 +245,62 @@ final class SortingService {
                 }
                 if (moved) {
                     stock.setStorageContents(contents);
-                    touched.add(stock);
-                    touched.add(shelf);
                 }
                 if (shelf.firstEmpty() == -1 && !hasRoomFor(shelf, contents, tag)) {
                     break; // full
                 }
             }
         }
-        touched.forEach(InventorySorter::sort);
+    }
+
+    /**
+     * Tidies the chest behind this inventory once its viewer has closed it, if it belongs to the
+     * system (input, shelf, stock or overflow). Runs after the sort and the refill of that chest.
+     */
+    void scheduleTidy(Inventory inventory) {
+        if (inventory == null
+                || (inventory.getType() != InventoryType.CHEST && inventory.getType() != InventoryType.BARREL)) {
+            return;
+        }
+        Location location = inventory.getLocation();
+        if (location == null || location.getWorld() == null) {
+            return;
+        }
+        Block block = location.getBlock();
+        if (!isStorage(block)) {
+            return;
+        }
+        ChestKey key = keyOf(halves(block));
+        if (pendingTidy.add(key)) {
+            plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+                pendingTidy.remove(key);
+                if (isLoaded(block) && isStorage(block) && isSystemChest(key, halves(block))) {
+                    InventorySorter.sort(inventoryOf(block)); // skipped if someone else still has it open
+                }
+            }, TIDY_DELAY_TICKS);
+        }
+    }
+
+    /** True if a frame of the system (Eye of Ender, valid tag, Carrot on a Stick) is on this chest. */
+    private boolean isSystemChest(ChestKey key, List<Block> halves) {
+        long now = System.currentTimeMillis();
+        Cached<Boolean> cached = systemCache.get(key);
+        if (cached != null && cached.expires() > now) {
+            return cached.value();
+        }
+        boolean system = false;
+        for (Block half : halves) {
+            for (Entity entity : framesOn(half)) {
+                ItemStack item = ((ItemFrame) entity).getItem();
+                if (item.getType() == Material.ENDER_EYE || item.getType() == Material.CARROT_ON_A_STICK
+                        || (item.getType() == Material.NAME_TAG && ItemNames.tag(item) != null)) {
+                    system = true;
+                }
+            }
+        }
+        prune(systemCache, now);
+        systemCache.put(key, new Cached<>(system, now + NETWORK_CACHE_MS));
+        return system;
     }
 
     /** True if the item belongs on a shelf with this tag. */
